@@ -1,0 +1,38 @@
+# cURLs for API requests
+
+# GET all showtimes (Read token)
+curl -H "ApiKey: MTIzNHxSZWFk" https://localhost:5001/showtime
+
+# GET filtered by date
+curl -H "ApiKey: MTIzNHxSZWFk" "https://localhost:5001/showtime?date=2022-02-01"
+
+# GET filtered by title
+curl -H "ApiKey: MTIzNHxSZWFk" "https://localhost:5001/showtime?title=Inception"
+
+# POST create showtime (Write token)
+curl -X POST -H "ApiKey: Nzg5NHxXcml0ZQ==" -H "Content-Type: application/json" -d '{
+  "start_date": "2022-05-01T00:00:00Z",
+  "end_date": "2022-06-01T00:00:00Z",
+  "schedule": ["16:00","18:00"],
+  "auditorium_id": 1,
+  "movie": { "imdb_id": "tt1375666" }
+}' "https://localhost:5001/showtime?imdbApiKey=YOUR_IMDB_API_KEY"
+
+# PUT update showtime (Write token)
+curl -X PUT -H "ApiKey: Nzg5NHxXcml0ZQ==" -H "Content-Type: application/json" -d '{
+  "id": 1,
+  "start_date": "2022-01-01T00:00:00Z",
+  "end_date": "2022-04-01T00:00:00Z",
+  "schedule": ["16:00","17:00"],
+  "auditorium_id": 2,
+  "movie": { "imdb_id": "tt1375666" }
+}' "https://localhost:5001/showtime?imdbApiKey=YOUR_IMDB_API_KEY"
+
+# DELETE showtime (Write token)
+curl -X DELETE -H "ApiKey: Nzg5NHxXcml0ZQ==" "https://localhost:5001/showtime/1"
+
+# PATCH triggers 500
+curl -X PATCH -H "ApiKey: Nzg5NHxXcml0ZQ==" "https://localhost:5001/showtime"
+
+# Status
+curl https://localhost:5001/status

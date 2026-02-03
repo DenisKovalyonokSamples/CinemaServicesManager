@@ -38,13 +38,28 @@ namespace CNM.Application
             });
             services.AddTransient<IShowtimesRepository, ShowtimesRepository>();
             services.AddSingleton<ICustomAuthenticationTokenService, CustomAuthenticationTokenService>();
+            services.AddSingleton<Services.ImdbStatusSingleton>();
+            services.AddHttpClient<Services.IImdbClient, Services.ImdbClient>();
+            services.AddHostedService<Services.ImdbStatusBackgroundService>();
             services.AddAuthentication(options =>
             {
                 options.AddScheme<CustomAuthenticationHandler>(CustomAuthenticationSchemeOptions.AuthenticationScheme, CustomAuthenticationSchemeOptions.AuthenticationScheme);
                 options.RequireAuthenticatedSignIn = true;                
                 options.DefaultScheme = CustomAuthenticationSchemeOptions.AuthenticationScheme;
             });
-            services.AddControllers();
+            services.AddAuthorization(options =>
+            {
+                options.AddPolicy("Read", policy => policy.RequireClaim(System.Security.Claims.ClaimTypes.Role, "Read"));
+                options.AddPolicy("Write", policy => policy.RequireClaim(System.Security.Claims.ClaimTypes.Role, "Write"));
+            });
+            services.AddControllers()
+                .AddNewtonsoftJson(opts =>
+                {
+                    opts.SerializerSettings.ContractResolver = new Newtonsoft.Json.Serialization.DefaultContractResolver
+                    {
+                        NamingStrategy = new Newtonsoft.Json.Serialization.SnakeCaseNamingStrategy()
+                    };
+                });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -60,6 +75,9 @@ namespace CNM.Application
             app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();
+
+            app.UseMiddleware<Middleware.RequestTimingMiddleware>();
+            app.UseMiddleware<Middleware.ErrorHandlingMiddleware>();
 
             app.UseEndpoints(endpoints =>
             {
