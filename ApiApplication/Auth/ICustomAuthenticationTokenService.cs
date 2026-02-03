@@ -1,6 +1,6 @@
 ﻿using System.Security.Claims;
 
-namespace ApiApplication.Auth
+namespace CNM.Application.Auth
 {
     public interface ICustomAuthenticationTokenService
     {

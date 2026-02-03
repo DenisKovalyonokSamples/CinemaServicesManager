@@ -1,11 +1,11 @@
-﻿using ApiApplication.Database.Entities;
+﻿using CNM.Application.Database.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace ApiApplication.Database
+namespace CNM.Application.Database
 {
     public class CinemaContext : DbContext
     {

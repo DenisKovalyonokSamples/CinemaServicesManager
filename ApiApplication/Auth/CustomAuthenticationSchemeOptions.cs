@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 
-namespace ApiApplication.Auth
+namespace CNM.Application.Auth
 {
     public class CustomAuthenticationSchemeOptions : AuthenticationSchemeOptions
     {

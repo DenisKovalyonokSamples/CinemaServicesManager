@@ -1,10 +1,10 @@
-﻿using ApiApplication.Database.Entities;
+﻿using CNM.Application.Database.Entities;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 
-namespace ApiApplication.Database
+namespace CNM.Application.Database
 {
     public class SampleData
     {

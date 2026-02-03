@@ -1,5 +1,5 @@
-using ApiApplication.Auth;
-using ApiApplication.Database;
+using CNM.Application.Auth;
+using CNM.Application.Database;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -16,7 +16,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace ApiApplication
+namespace CNM.Application
 {
     public class Startup
     {

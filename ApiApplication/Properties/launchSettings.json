@@ -5,7 +5,7 @@
     "anonymousAuthentication": true
   },
   "profiles": {
-    "ApiApplication": {
+    "CNM.Application": {
       "commandName": "Project",
       "launchBrowser": true,
       "launchUrl": "showtime",

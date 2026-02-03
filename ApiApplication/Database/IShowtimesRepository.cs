@@ -1,9 +1,9 @@
-﻿using ApiApplication.Database.Entities;
+﻿using CNM.Application.Database.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace ApiApplication.Database
+namespace CNM.Application.Database
 {
     public interface IShowtimesRepository
     {

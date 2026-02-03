@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ApiApplication.Auth
+namespace CNM.Application.Auth
 {
     public class ReadTokenException : Exception
     {

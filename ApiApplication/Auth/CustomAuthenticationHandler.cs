@@ -5,7 +5,7 @@ using Microsoft.Extensions.Options;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 
-namespace ApiApplication.Auth
+namespace CNM.Application.Auth
 {
     public class CustomAuthenticationHandler : AuthenticationHandler<CustomAuthenticationSchemeOptions>
     {
