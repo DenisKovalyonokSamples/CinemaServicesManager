@@ -1,21 +1,21 @@
 Context
-We want an C# .net core Web Application API project that meet our requisites, we provide you the solution skeleton and a few features implemented to save time.
 
 The API must follow the RESTless architecture and the resources must be formatted in JSON with SnakeCase.
 
-You will find the Data layer is implemented and is instructed to be a In-Memory Database. Please do not modify the Data layer Entities.
+Data layer is implemented and is instructed to be a In-Memory Database. Do not modify the Data layer Entities.
 
-The application represents a Cinema. We want to manage the showtimes of the cinema, feeding some data from the IMDB API.
+The application represents a Cinema. It should manage the showtimes of the cinema, feeding some data from the IMDB API.
 
-An Authentication Scheme is already implemented that work with a very simple token. You will need to use the following values in the request headers depend the case, more explained in detail further:
+An Authentication Scheme is already implemented that work with a very simple token. Use the following values in the request headers depend the case, more explained in detail further:
 
 Read-only Token Header Name: ApiKey | Header Value : MTIzNHxSZWFk
 
 Write Token Header Name: ApiKey | Header Value : Nzg5NHxXcml0ZQ==
 
-To use the IMDB API you will need to create an account to get an Api Key to use with their system.
+To use the IMDB API create an account to get an Api Key to use with their system.
 
 Implementation instructions
+
 API Endpoints
 Create the classes for the following Resources
 
@@ -37,7 +37,7 @@ IMDB Status
 
 up : boolean
 last_call : DateTime
-We want an API controller named ShowtimeController with the following methods:
+API controller should be named ShowtimeController with the following methods:
 
 GET : Get All Showtimes,
 
@@ -51,26 +51,28 @@ DELETE : Deletes a Showtime by Id.
 
 PATCH : Throws an Error 500, for testing the error handling. Read Error Handling after.
 
-We also want antoher controller named StatusController with the follwing method:
+Also, antoher controller required and should be named StatusController with the follwing method:
 
 GET : Get the current IMDB Status (read the next line). We want a backgorund task that calls the IMDB API, you can use any method you prefer or the main webpage, and update the Status into a Singleton object IMDB Status every 60 seconds.
 Data Layer Repository
 To complete the API Controller implementation you will need to complete the implementation of ShowtimesRepository.
 
 Authorization
-As we explained before we added the Authentication, so you don't have to implement. But we want you to implement the Authorization policies.
 
-We ask you to create 2 Authorization policies.
+Authentication added, also implement the Authorization policies.
+
+Required 2 Authorization policies.
 
 Read : It allows to access if you use the Read-only Token.
 Enforce the policy on the GET method of ShowtimeController.
 Write : It allows to access if you use the Write Token.
 Enforce the policy on the non GET methods of ShowtimeController.
 Execution Tracking
-We want to track the execution time of call in ShowtimeController and log in the Console. By default we set the loggers to log in the Console, so you only need to worry to get the Logger in the code. Track the execution time without adding code inside the ShowtimeController, find a way.
+Solution should track the execution time of call in ShowtimeController and log in the Console. By default we set the loggers to log in the Console, so you only need to worry to get the Logger in the code. Track the execution time without adding code inside the ShowtimeController, find a way.
 
 Error Handling
-We want to handle the errors in the Controller ShowtimeController. Find a way to do it without adding code inside the ShowtimeController.
+
+Solution should handle the errors in the Controller ShowtimeController. Find a way to do it without adding code inside the ShowtimeController.
 
 Add the Request to cUrls file
-We added a file next to this readme named cUrls.txt. Please add the cURLs of the requests you will do in the file.
+Add the cURLs of the requests you will do in the file.
