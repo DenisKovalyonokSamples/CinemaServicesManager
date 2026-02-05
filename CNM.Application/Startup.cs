@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.AspNetCore.HttpOverrides;
 
 namespace CNM.Application
 {
@@ -21,14 +22,17 @@ namespace CNM.Application
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddDbContext<CinemaContext>(options =>
+            services.AddDbContext<CinemaContext>((sp, options) =>
             {
+                var env = sp.GetRequiredService<IWebHostEnvironment>();
                 options.UseInMemoryDatabase("CinemaDb")
-                    .EnableSensitiveDataLogging()
                     .ConfigureWarnings(b => b.Ignore(InMemoryEventId.TransactionIgnoredWarning));
+                if (env.IsDevelopment())
+                {
+                    options.EnableSensitiveDataLogging();
+                }
             });
             services.AddTransient<IShowtimesRepository, ShowtimesRepository>();
-            services.AddAuthentication();
             services.AddAuthorization();
             services.AddControllers()
                 .AddNewtonsoftJson(opts =>
@@ -38,6 +42,7 @@ namespace CNM.Application
                         NamingStrategy = new Newtonsoft.Json.Serialization.SnakeCaseNamingStrategy()
                     };
                 });
+            services.AddHealthChecks();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -47,21 +52,34 @@ namespace CNM.Application
             {
                 app.UseDeveloperExceptionPage();
             }
+            else
+            {
+                app.UseExceptionHandler("/error");
+                app.UseHsts();
+            }
 
             app.UseHttpsRedirection();
+
+            app.UseForwardedHeaders(new ForwardedHeadersOptions
+            {
+                ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+            });
 
             app.UseRouting();
 
             // Authentication/Authorization must be ordered after routing and before endpoints
-            app.UseAuthentication();
             app.UseAuthorization();
+
+            using (var scope = app.ApplicationServices.CreateScope())
+            {
+                SampleData.Initialize(app);
+            }
 
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+                endpoints.MapHealthChecks("/health");
             });
-
-            SampleData.Initialize(app);
         }
     }
 }
