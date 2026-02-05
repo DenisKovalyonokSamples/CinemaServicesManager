@@ -1,4 +1,4 @@
-﻿using CNM.Showtimes.API.Database.Entities;
+using CNM.Showtimes.API.Database.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,16 +16,16 @@ namespace CNM.Showtimes.API.Database
 
         public ShowtimeEntity Add(ShowtimeEntity showtimeEntity)
         {
-            _context.Showtimes.Add(showtimeEntity); // Added: add new showtime
+            _context.Showtimes.Add(showtimeEntity);
             _context.SaveChanges();
             return showtimeEntity;
         }
 
         public ShowtimeEntity Delete(int id)
         {
-            var entity = _context.Showtimes.FirstOrDefault(x => x.Id == id); // Added: find by id
+            var entity = _context.Showtimes.FirstOrDefault(x => x.Id == id);
             if (entity == null) return null;
-            _context.Showtimes.Remove(entity); // Added: delete
+            _context.Showtimes.Remove(entity);
             _context.SaveChanges();
             return entity;
         }
@@ -34,10 +34,7 @@ namespace CNM.Showtimes.API.Database
         {
             var query = _context.Movies.AsQueryable();
             if (filter != null && !filter(query)) return null;
-            // When filter returns true, pick first matching by applying same filter logic externally
-            // Consumers should pass filter that inspects the IQueryable and returns true if any match exists
-            // Provide basic helper: return first movie regardless when filter is null
-            return _context.Showtimes.FirstOrDefault(x => x.Movie != null); // Added: basic movie lookup
+            return _context.Showtimes.FirstOrDefault(x => x.Movie != null);
         }
 
         public IEnumerable<ShowtimeEntity> GetCollection()
@@ -47,16 +44,15 @@ namespace CNM.Showtimes.API.Database
 
         public IEnumerable<ShowtimeEntity> GetCollection(Func<IQueryable<ShowtimeEntity>, bool> filter)
         {
-            var query = _context.Showtimes.AsQueryable(); // Added: base query
+            var query = _context.Showtimes.AsQueryable();
             if (filter == null) return query.ToList();
-            // Since signature expects a Func<IQueryable<ShowtimeEntity>, bool>, evaluate then return full or empty
             var ok = filter(query);
             return ok ? query.ToList() : Enumerable.Empty<ShowtimeEntity>();
         }
 
         public ShowtimeEntity Update(ShowtimeEntity showtimeEntity)
         {
-            var existing = _context.Showtimes.FirstOrDefault(x => x.Id == showtimeEntity.Id); // Added: find existing
+            var existing = _context.Showtimes.FirstOrDefault(x => x.Id == showtimeEntity.Id);
             if (existing == null) return null;
             existing.StartDate = showtimeEntity.StartDate;
             existing.EndDate = showtimeEntity.EndDate;
@@ -64,7 +60,7 @@ namespace CNM.Showtimes.API.Database
             existing.AuditoriumId = showtimeEntity.AuditoriumId;
             if (showtimeEntity.Movie != null)
             {
-                var movie = _context.Movies.FirstOrDefault(m => m.ShowtimeId == existing.Id); // Added: attach/update movie
+                var movie = _context.Movies.FirstOrDefault(m => m.ShowtimeId == existing.Id);
                 if (movie == null)
                 {
                     movie = new MovieEntity { ShowtimeId = existing.Id };

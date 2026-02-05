@@ -9,13 +9,13 @@ namespace CNM.Showtimes.API.Middleware
     {
         private readonly RequestDelegate _next;
         private readonly ILogger<RequestTimingMiddleware> _logger;
-        public RequestTimingMiddleware(RequestDelegate next, ILogger<RequestTimingMiddleware> logger) // Added: DI constructor
+        public RequestTimingMiddleware(RequestDelegate next, ILogger<RequestTimingMiddleware> logger)
         {
             _next = next;
             _logger = logger;
         }
 
-        public async Task Invoke(HttpContext context) // Added: log execution time of showtime endpoints
+        public async Task Invoke(HttpContext context)
         {
             var sw = Stopwatch.StartNew();
             await _next(context);

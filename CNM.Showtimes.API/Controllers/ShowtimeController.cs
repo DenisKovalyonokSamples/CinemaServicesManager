@@ -1,13 +1,13 @@
-using CNM.Application.Database;
-using CNM.Application.Database.Entities;
-using CNM.Application.Services;
+using CNM.Showtimes.API.Database;
+using CNM.Showtimes.API.Database.Entities;
+using CNM.Showtimes.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace CNM.Application.Controllers
+namespace CNM.Showtimes.API.Controllers
 {
     [ApiController]
     [Route("showtime")]
@@ -15,14 +15,14 @@ namespace CNM.Application.Controllers
     {
         private readonly IShowtimesRepository _repo;
         private readonly IImdbClient _imdb;
-        public ShowtimeController(IShowtimesRepository repo, IImdbClient imdb) // Added: DI constructor
+        public ShowtimeController(IShowtimesRepository repo, IImdbClient imdb)
         {
             _repo = repo;
             _imdb = imdb;
         }
 
         [HttpGet]
-        [Authorize(Policy = "Read")] // Added: enforce Read policy
+        [Authorize(Policy = "Read")]
         public IActionResult Get([FromQuery] DateTime? date, [FromQuery] string title)
         {
             var list = _repo.GetCollection(q =>
@@ -42,7 +42,7 @@ namespace CNM.Application.Controllers
         }
 
         [HttpPost]
-        [Authorize(Policy = "Write")] // Added: enforce Write policy
+        [Authorize(Policy = "Write")]
         public async Task<IActionResult> Post([FromBody] ShowtimeEntity payload, [FromQuery] string imdbApiKey)
         {
             if (payload?.Movie == null || string.IsNullOrWhiteSpace(payload.Movie.ImdbId))
@@ -56,7 +56,7 @@ namespace CNM.Application.Controllers
         }
 
         [HttpPut]
-        [Authorize(Policy = "Write")] // Added: enforce Write policy
+        [Authorize(Policy = "Write")]
         public async Task<IActionResult> Put([FromBody] ShowtimeEntity payload, [FromQuery] string imdbApiKey)
         {
             if (payload.Movie != null && !string.IsNullOrWhiteSpace(payload.Movie.ImdbId))
@@ -72,7 +72,7 @@ namespace CNM.Application.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Policy = "Write")] // Added: enforce Write policy
+        [Authorize(Policy = "Write")]
         public IActionResult Delete(int id)
         {
             var removed = _repo.Delete(id);
@@ -81,7 +81,7 @@ namespace CNM.Application.Controllers
         }
 
         [HttpPatch]
-        public IActionResult Patch() // Added: test endpoint to return 500
+        public IActionResult Patch()
         {
             throw new Exception("Test error");
         }

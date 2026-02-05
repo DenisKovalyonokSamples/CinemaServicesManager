@@ -1,6 +1,6 @@
-﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication;
 
-namespace CNM.Application.Auth
+namespace CNM.Showtimes.API.Auth
 {
     public class CustomAuthenticationSchemeOptions : AuthenticationSchemeOptions
     {

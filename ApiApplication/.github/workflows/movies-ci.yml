@@ -1,0 +1,26 @@
+name: Movies CI
+
+on:
+  push:
+    paths:
+      - 'CNM.Movies.API/**'
+  pull_request:
+    paths:
+      - 'CNM.Movies.API/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '3.1.x'
+      - name: Restore
+        run: dotnet restore CNM.Movies.API/CNM.Movies.API.csproj
+      - name: Build
+        run: dotnet build CNM.Movies.API/CNM.Movies.API.csproj --configuration Release --no-restore
+      - name: Publish
+        run: dotnet publish CNM.Movies.API/CNM.Movies.API.csproj --configuration Release --no-build -o out
+      - name: Build Docker image
+        run: docker build -t cnm-movies-api:latest CNM.Movies.API

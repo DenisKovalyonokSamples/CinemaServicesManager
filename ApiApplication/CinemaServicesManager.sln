@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.2.11415.280 d18.0
+VisualStudioVersion = 18.2.11415.280
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CNM.Application", "CNM.Application.csproj", "{979FF842-D59A-44BD-A726-4850A4B9647A}"
 EndProject
@@ -11,6 +11,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		..\Feedback.md = ..\Feedback.md
 		..\Readme.md = ..\Readme.md
 	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Services", "Services", "{0038DCE7-0142-40BC-B802-0753F8E4E658}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CNM.Gateway.API", "..\CNM.Gateway.API\CNM.Gateway.API.csproj", "{06C7F791-A220-439D-9EED-67F093E3697C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CNM.Movies.API", "..\CNM.Movies.API\CNM.Movies.API.csproj", "{DC647D4D-9B01-4781-BEBC-94D6DA1B8ED1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CNM.Showtimes.API", "..\CNM.Showtimes.API\CNM.Showtimes.API.csproj", "{9B3AAB7F-DBB7-4747-A425-9C1FF4E2BB91}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -22,9 +30,26 @@ Global
 		{979FF842-D59A-44BD-A726-4850A4B9647A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{979FF842-D59A-44BD-A726-4850A4B9647A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{979FF842-D59A-44BD-A726-4850A4B9647A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{06C7F791-A220-439D-9EED-67F093E3697C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{06C7F791-A220-439D-9EED-67F093E3697C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{06C7F791-A220-439D-9EED-67F093E3697C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{06C7F791-A220-439D-9EED-67F093E3697C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DC647D4D-9B01-4781-BEBC-94D6DA1B8ED1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DC647D4D-9B01-4781-BEBC-94D6DA1B8ED1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DC647D4D-9B01-4781-BEBC-94D6DA1B8ED1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DC647D4D-9B01-4781-BEBC-94D6DA1B8ED1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9B3AAB7F-DBB7-4747-A425-9C1FF4E2BB91}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9B3AAB7F-DBB7-4747-A425-9C1FF4E2BB91}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9B3AAB7F-DBB7-4747-A425-9C1FF4E2BB91}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9B3AAB7F-DBB7-4747-A425-9C1FF4E2BB91}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{06C7F791-A220-439D-9EED-67F093E3697C} = {0038DCE7-0142-40BC-B802-0753F8E4E658}
+		{DC647D4D-9B01-4781-BEBC-94D6DA1B8ED1} = {0038DCE7-0142-40BC-B802-0753F8E4E658}
+		{9B3AAB7F-DBB7-4747-A425-9C1FF4E2BB91} = {0038DCE7-0142-40BC-B802-0753F8E4E658}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C52A7E7E-4F02-4B44-B7D4-995DE72CF0B3}

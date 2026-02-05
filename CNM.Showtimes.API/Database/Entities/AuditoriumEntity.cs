@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
+using System.Collections.Generic;
 
 namespace CNM.Showtimes.API.Database.Entities
 {
@@ -8,6 +7,5 @@ namespace CNM.Showtimes.API.Database.Entities
         public int Id { get; set; }
         public List<ShowtimeEntity> Showtimes { get; set; }
         public int Seats { get; set; }
-       
     }
 }

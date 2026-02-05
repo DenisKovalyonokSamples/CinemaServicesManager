@@ -3,12 +3,12 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace CNM.Application.Services
+namespace CNM.Movies.API.Services
 {
     public interface IImdbClient
     {
-        Task<bool> PingAsync(); // Added: checks IMDB API availability
-        Task<ImdbTitleResponse> GetByIdAsync(string imdbId, string apiKey); // Added: fetch movie details by IMDB id
+        Task<bool> PingAsync();
+        Task<ImdbTitleResponse> GetByIdAsync(string imdbId, string apiKey);
     }
 
     public class ImdbClient : IImdbClient
@@ -17,10 +17,9 @@ namespace CNM.Application.Services
         public ImdbClient(HttpClient http)
         {
             _http = http;
-            _http.BaseAddress = new Uri("https://imdb-api.com/");
         }
 
-        public async Task<bool> PingAsync() // Added: simple ping request
+        public async Task<bool> PingAsync()
         {
             try
             {
@@ -33,7 +32,7 @@ namespace CNM.Application.Services
             }
         }
 
-        public async Task<ImdbTitleResponse> GetByIdAsync(string imdbId, string apiKey) // Added: title lookup by id
+        public async Task<ImdbTitleResponse> GetByIdAsync(string imdbId, string apiKey)
         {
             var resp = await _http.GetAsync($"API/Title/{apiKey}/{imdbId}");
             resp.EnsureSuccessStatusCode();

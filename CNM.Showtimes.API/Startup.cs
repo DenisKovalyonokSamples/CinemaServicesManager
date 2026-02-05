@@ -1,4 +1,6 @@
+using CNM.Showtimes.API.Auth;
 using CNM.Showtimes.API.Database;
+using CNM.Showtimes.API.Middleware;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -7,7 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace CNM.Application
+namespace CNM.Showtimes.API
 {
     public class Startup
     {
@@ -28,6 +30,21 @@ namespace CNM.Application
                     .ConfigureWarnings(b => b.Ignore(InMemoryEventId.TransactionIgnoredWarning));
             });
             services.AddTransient<IShowtimesRepository, ShowtimesRepository>();
+            services.AddSingleton<ICustomAuthenticationTokenService, CustomAuthenticationTokenService>();
+            services.AddSingleton<Services.ImdbStatusSingleton>();
+            services.AddHttpClient<Services.IImdbClient, Services.ImdbClient>();
+            services.AddHostedService<Services.ImdbStatusBackgroundService>();
+            services.AddAuthentication(options =>
+            {
+                options.AddScheme<CustomAuthenticationHandler>(CustomAuthenticationSchemeOptions.AuthenticationScheme, CustomAuthenticationSchemeOptions.AuthenticationScheme);
+                options.RequireAuthenticatedSignIn = true;
+                options.DefaultScheme = CustomAuthenticationSchemeOptions.AuthenticationScheme;
+            });
+            services.AddAuthorization(options =>
+            {
+                options.AddPolicy("Read", policy => policy.RequireClaim(System.Security.Claims.ClaimTypes.Role, "Read"));
+                options.AddPolicy("Write", policy => policy.RequireClaim(System.Security.Claims.ClaimTypes.Role, "Write"));
+            });
             services.AddControllers()
                 .AddNewtonsoftJson(opts =>
                 {
@@ -49,6 +66,11 @@ namespace CNM.Application
             app.UseHttpsRedirection();
 
             app.UseRouting();
+            app.UseAuthentication();
+            app.UseAuthorization();
+
+            app.UseMiddleware<RequestTimingMiddleware>();
+            app.UseMiddleware<ErrorHandlingMiddleware>();
 
             app.UseEndpoints(endpoints =>
             {

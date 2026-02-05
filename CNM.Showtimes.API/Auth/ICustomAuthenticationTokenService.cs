@@ -1,6 +1,6 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 
-namespace CNM.Application.Auth
+namespace CNM.Showtimes.API.Auth
 {
     public interface ICustomAuthenticationTokenService
     {

@@ -8,15 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Controllers\**" />
-    <Content Remove="Controllers\**" />
-    <EmbeddedResource Remove="Controllers\**" />
-    <None Remove="Controllers\**" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Include="Controllers\ShowtimeController.cs" />
-    <Compile Include="Controllers\StatusController.cs" />
+    <None Include=".github\workflows\gateway-ci.yml" />
+    <None Include=".github\workflows\movies-ci.yml" />
+    <None Include=".github\workflows\showtimes-ci.yml" />
   </ItemGroup>
 
   <ItemGroup>

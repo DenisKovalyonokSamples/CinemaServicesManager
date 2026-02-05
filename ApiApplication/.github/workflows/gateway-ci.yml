@@ -1,0 +1,26 @@
+name: Gateway CI
+
+on:
+  push:
+    paths:
+      - 'CNM.Gateway.API/**'
+  pull_request:
+    paths:
+      - 'CNM.Gateway.API/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '3.1.x'
+      - name: Restore
+        run: dotnet restore CNM.Gateway.API/CNM.Gateway.API.csproj
+      - name: Build
+        run: dotnet build CNM.Gateway.API/CNM.Gateway.API.csproj --configuration Release --no-restore
+      - name: Publish
+        run: dotnet publish CNM.Gateway.API/CNM.Gateway.API.csproj --configuration Release --no-build -o out
+      - name: Build Docker image
+        run: docker build -t cnm-gateway-api:latest CNM.Gateway.API

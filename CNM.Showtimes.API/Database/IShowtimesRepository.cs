@@ -1,4 +1,4 @@
-﻿using CNM.Showtimes.API.Database.Entities;
+using CNM.Showtimes.API.Database.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;

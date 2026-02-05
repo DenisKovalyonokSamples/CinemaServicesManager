@@ -1,11 +1,10 @@
-﻿using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 
-namespace CNM.Application.Auth
+namespace CNM.Showtimes.API.Auth
 {
     public class CustomAuthenticationHandler : AuthenticationHandler<CustomAuthenticationSchemeOptions>
     {
@@ -22,7 +21,7 @@ namespace CNM.Application.Auth
         }
 
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
-        {            
+        {
             try
             {
                 var apiKey = Context.Request.Headers["ApiKey"];

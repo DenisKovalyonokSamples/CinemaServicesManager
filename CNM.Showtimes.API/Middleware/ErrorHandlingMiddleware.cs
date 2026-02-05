@@ -10,13 +10,13 @@ namespace CNM.Showtimes.API.Middleware
     {
         private readonly RequestDelegate _next;
         private readonly ILogger<ErrorHandlingMiddleware> _logger;
-        public ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandlingMiddleware> logger) // Added: DI constructor
+        public ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandlingMiddleware> logger)
         {
             _next = next;
             _logger = logger;
         }
 
-        public async Task Invoke(HttpContext context) // Added: catch and return 500 with JSON
+        public async Task Invoke(HttpContext context)
         {
             try
             {

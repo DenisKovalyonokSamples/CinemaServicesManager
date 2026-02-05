@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Security.Claims;
 
-namespace CNM.Application.Auth
+namespace CNM.Showtimes.API.Auth
 {
     public class CustomAuthenticationTokenService : ICustomAuthenticationTokenService
     {
@@ -23,7 +23,7 @@ namespace CNM.Application.Auth
             catch (System.Exception ex)
             {
                 throw new ReadTokenException(value, ex);
-            }            
+            }
         }
     }
 }
