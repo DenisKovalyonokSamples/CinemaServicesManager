@@ -12,7 +12,7 @@ Read-only Token Header Name: ApiKey | Header Value : MTIzNHxSZWFk
 
 Write Token Header Name: ApiKey | Header Value : Nzg5NHxXcml0ZQ==
 
-To use the IMDB API you will need to create an account to get an Api Key to use with their system.
+To use the IMDB API create an account to get an Api Key to use with their system.
 
 Implementation instructions
 
@@ -37,7 +37,7 @@ IMDB Status
 
 up : boolean
 last_call : DateTime
-We want an API controller named ShowtimeController with the following methods:
+API controller should be named ShowtimeController with the following methods:
 
 GET : Get All Showtimes,
 
@@ -51,7 +51,7 @@ DELETE : Deletes a Showtime by Id.
 
 PATCH : Throws an Error 500, for testing the error handling. Read Error Handling after.
 
-We also want antoher controller named StatusController with the follwing method:
+Also, antoher controller required and should be named StatusController with the follwing method:
 
 GET : Get the current IMDB Status (read the next line). We want a backgorund task that calls the IMDB API, you can use any method you prefer or the main webpage, and update the Status into a Singleton object IMDB Status every 60 seconds.
 Data Layer Repository
@@ -75,4 +75,4 @@ Error Handling
 Solution should handle the errors in the Controller ShowtimeController. Find a way to do it without adding code inside the ShowtimeController.
 
 Add the Request to cUrls file
-We added a file next to this readme named cUrls.txt. Please add the cURLs of the requests you will do in the file.
+Add the cURLs of the requests you will do in the file.
