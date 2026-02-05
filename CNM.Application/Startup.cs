@@ -28,6 +28,8 @@ namespace CNM.Application
                     .ConfigureWarnings(b => b.Ignore(InMemoryEventId.TransactionIgnoredWarning));
             });
             services.AddTransient<IShowtimesRepository, ShowtimesRepository>();
+            services.AddAuthentication();
+            services.AddAuthorization();
             services.AddControllers()
                 .AddNewtonsoftJson(opts =>
                 {
@@ -49,6 +51,10 @@ namespace CNM.Application
             app.UseHttpsRedirection();
 
             app.UseRouting();
+
+            // Authentication/Authorization must be ordered after routing and before endpoints
+            app.UseAuthentication();
+            app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {
