@@ -1,0 +1,49 @@
+version: "3.8"
+services:
+  movies:
+    build:
+      context: .
+      dockerfile: CNM.Movies.API/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:80
+    ports:
+      - "5001:80"
+
+  showtimes:
+    build:
+      context: .
+      dockerfile: CNM.Showtimes.API/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:80
+    ports:
+      - "5002:80"
+
+  gateway:
+    build:
+      context: .
+      dockerfile: CNM.Gateway.API/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:80
+      # Add service URLs if gateway needs to call downstream APIs
+      - Movies__BaseUrl=http://movies
+      - Showtimes__BaseUrl=http://showtimes
+    ports:
+      - "5000:80"
+    depends_on:
+      - movies
+      - showtimes
+
+  application:
+    build:
+      context: .
+      dockerfile: CNM.Application/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:80
+    ports:
+      - "5003:80"
+    depends_on:
+      - showtimes
