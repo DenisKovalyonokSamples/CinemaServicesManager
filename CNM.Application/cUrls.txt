@@ -1,5 +1,22 @@
 # cURLs for API requests
 
+# Swagger endpoints (default dev ports)
+# Application API (CNM.Application)
+#   UI   -> https://localhost:7629/swagger
+#   JSON -> https://localhost:7629/swagger/v1/swagger.json
+
+# Showtimes API (CNM.Showtimes.API)
+#   UI   -> https://localhost:5001/swagger
+#   JSON -> https://localhost:5001/swagger/v1/swagger.json
+
+# Movies API (CNM.Movies.API)
+#   UI   -> https://localhost:5001/swagger
+#   JSON -> https://localhost:5001/swagger/v1/swagger.json
+
+# Gateway API (CNM.Gateway.API)
+#   UI   -> https://localhost:5001/swagger
+#   JSON -> https://localhost:5001/swagger/v1/swagger.json
+
 # GET all showtimes (Read token)
 curl -H "ApiKey: MTIzNHxSZWFk" https://localhost:5001/showtime
 
