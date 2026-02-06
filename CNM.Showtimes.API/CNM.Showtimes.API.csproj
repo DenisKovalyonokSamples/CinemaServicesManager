@@ -11,5 +11,9 @@
     <PackageReference Include="Swashbuckle.AspNetCore.Newtonsoft" Version="5.6.3" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\CNM.Domain\CNM.Domain.csproj" />
+  </ItemGroup>
+
 
 </Project>

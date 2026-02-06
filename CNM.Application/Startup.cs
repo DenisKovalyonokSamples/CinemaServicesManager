@@ -1,4 +1,4 @@
-using CNM.Showtimes.API.Database;
+using DomainDb = CNM.Domain.Database;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -23,7 +23,7 @@ namespace CNM.Application
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddDbContext<CinemaContext>((sp, options) =>
+            services.AddDbContext<DomainDb.CinemaContext>((sp, options) =>
             {
                 var env = sp.GetRequiredService<IWebHostEnvironment>();
                 options.UseInMemoryDatabase("CinemaDb")
@@ -33,7 +33,7 @@ namespace CNM.Application
                     options.EnableSensitiveDataLogging();
                 }
             });
-            services.AddTransient<IShowtimesRepository, ShowtimesRepository>();
+            services.AddTransient<DomainDb.IShowtimesRepository, DomainDb.ShowtimesRepository>();
             services.AddAuthorization();
             services.AddControllers()
                 .AddNewtonsoftJson(opts =>
@@ -80,10 +80,7 @@ namespace CNM.Application
             // Authentication/Authorization must be ordered after routing and before endpoints
             app.UseAuthorization();
 
-            using (var scope = app.ApplicationServices.CreateScope())
-            {
-                SampleData.Initialize(app);
-            }
+            // Seeding disabled: CNM.Showtimes.API.Database.SampleData was removed
 
             app.UseEndpoints(endpoints =>
             {

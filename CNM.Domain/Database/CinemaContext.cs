@@ -1,18 +1,13 @@
-﻿using CNM.Showtimes.API.Database.Entities;
+using CNM.Domain.Database.Entities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 
-namespace CNM.Showtimes.API.Database
+namespace CNM.Domain.Database
 {
     public class CinemaContext : DbContext
     {
-        public CinemaContext(DbContextOptions<CinemaContext> options) : base(options)
-        {
-            
-        }
+        public CinemaContext(DbContextOptions<CinemaContext> options) : base(options) {}
 
         public DbSet<AuditoriumEntity> Auditoriums { get; set; }
         public DbSet<ShowtimeEntity> Showtimes { get; set; }
@@ -30,7 +25,7 @@ namespace CNM.Showtimes.API.Database
             modelBuilder.Entity<ShowtimeEntity>(build =>
             {
                 build.HasKey(entry => entry.Id);
-                build.Property(entry => entry.Id).ValueGeneratedOnAdd();                
+                build.Property(entry => entry.Id).ValueGeneratedOnAdd();
                 build.Property(entry => entry.Schedule).HasConversion(x => string.Join(",", x), y => y.Split(",", StringSplitOptions.RemoveEmptyEntries).ToList());
                 build.HasOne(entry => entry.Movie).WithOne().HasForeignKey<MovieEntity>(entry => entry.ShowtimeId);
             });
@@ -39,7 +34,7 @@ namespace CNM.Showtimes.API.Database
             {
                 build.HasKey(entry => entry.Id);
                 build.Property(entry => entry.Id).ValueGeneratedOnAdd();
-            });            
+            });
         }
     }
 }

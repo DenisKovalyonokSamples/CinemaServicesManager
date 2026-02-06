@@ -1,5 +1,6 @@
-using CNM.Showtimes.API.Database;
-using CNM.Showtimes.API.Database.Entities;
+using CNM.Showtimes.API.Database; // keep this for DI registration
+using DomainDb = CNM.Domain.Database;
+using DomainEntities = CNM.Domain.Database.Entities;
 using CNM.Showtimes.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,9 +14,9 @@ namespace CNM.Showtimes.API.Controllers
     [Route("showtime")]
     public class ShowtimeController : ControllerBase
     {
-        private readonly IShowtimesRepository _repo;
+        private readonly DomainDb.IShowtimesRepository _repo;
         private readonly IImdbClient _imdb;
-        public ShowtimeController(IShowtimesRepository repo, IImdbClient imdb)
+        public ShowtimeController(DomainDb.IShowtimesRepository repo, IImdbClient imdb)
         {
             _repo = repo;
             _imdb = imdb;
@@ -38,12 +39,12 @@ namespace CNM.Showtimes.API.Controllers
                 }
                 return data.Any();
             });
-            return Ok(list);
+            return Ok(list.ToList());
         }
 
         [HttpPost]
         [Authorize(Policy = "Write")]
-        public async Task<IActionResult> Post([FromBody] ShowtimeEntity payload, [FromQuery] string imdbApiKey)
+        public async Task<IActionResult> Post([FromBody] DomainEntities.ShowtimeEntity payload, [FromQuery] string imdbApiKey)
         {
             if (payload?.Movie == null || string.IsNullOrWhiteSpace(payload.Movie.ImdbId))
                 return BadRequest("movie.imdb_id required");
@@ -57,7 +58,7 @@ namespace CNM.Showtimes.API.Controllers
 
         [HttpPut]
         [Authorize(Policy = "Write")]
-        public async Task<IActionResult> Put([FromBody] ShowtimeEntity payload, [FromQuery] string imdbApiKey)
+        public async Task<IActionResult> Put([FromBody] DomainEntities.ShowtimeEntity payload, [FromQuery] string imdbApiKey)
         {
             if (payload.Movie != null && !string.IsNullOrWhiteSpace(payload.Movie.ImdbId))
             {

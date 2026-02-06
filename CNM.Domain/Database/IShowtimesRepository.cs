@@ -1,9 +1,9 @@
-using CNM.Showtimes.API.Database.Entities;
+using CNM.Domain.Database.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace CNM.Showtimes.API.Database
+namespace CNM.Domain.Database
 {
     public interface IShowtimesRepository
     {

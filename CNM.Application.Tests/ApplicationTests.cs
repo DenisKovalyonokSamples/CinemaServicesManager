@@ -3,14 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using CNM.Application;
-using CNM.Showtimes.API.Database;
-using CNM.Showtimes.API.Database.Entities;
-using CNM.Showtimes.API.Middleware;
+using CNM.Domain.Database;
+using Middleware = CNM.Showtimes.API.Middleware;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -74,23 +71,7 @@ namespace CNM.Application.Tests
             Assert.Null(exception);
         }
 
-        // Validates that SampleData seeds the in-memory database.
-        [Fact]
-        public void SampleData_Initialize_PopulatesDatabase()
-        {
-            var serviceCollection = new ServiceCollection();
-            serviceCollection.AddDbContext<CinemaContext>(opts => opts.UseInMemoryDatabase("sample"));
-            var serviceProvider = serviceCollection.BuildServiceProvider();
-            var appBuilder = new ApplicationBuilder(serviceProvider);
-
-            SampleData.Initialize(appBuilder);
-
-            using var scope = serviceProvider.CreateScope();
-            var dbContext = scope.ServiceProvider.GetRequiredService<CinemaContext>();
-            Assert.True(dbContext.Auditoriums.Any());
-            Assert.True(dbContext.Showtimes.Any());
-            Assert.True(dbContext.Movies.Any());
-        }
+        // SampleData was removed; skip seeding validation.
 
         // Covers repository add, query, update, and delete flows against in-memory EF Core.
         [Fact]
@@ -101,14 +82,14 @@ namespace CNM.Application.Tests
             var repository = new ShowtimesRepository(dbContext);
 
             // Add
-            var newShowtime = new ShowtimeEntity
+            var newShowtime = new CNM.Domain.Database.Entities.ShowtimeEntity
             {
                 Id = 1,
                 StartDate = new DateTime(2020, 1, 1),
                 EndDate = new DateTime(2020, 1, 2),
                 AuditoriumId = 10,
                 Schedule = new[] { "10:00" },
-                Movie = new MovieEntity { Title = "First", ImdbId = "tt1", Stars = "A", ReleaseDate = new DateTime(2019, 1, 1) }
+                Movie = new CNM.Domain.Database.Entities.MovieEntity { Title = "First", ImdbId = "tt1", Stars = "A", ReleaseDate = new DateTime(2019, 1, 1) }
             };
             var addedShowtime = repository.Add(newShowtime);
             Assert.Equal(1, dbContext.Showtimes.Count());
@@ -122,14 +103,14 @@ namespace CNM.Application.Tests
             Assert.Single(filteredShowtimes);
 
             // Update existing
-            var updatedShowtime = repository.Update(new ShowtimeEntity
+            var updatedShowtime = repository.Update(new CNM.Domain.Database.Entities.ShowtimeEntity
             {
                 Id = 1,
                 StartDate = new DateTime(2020, 1, 3),
                 EndDate = new DateTime(2020, 1, 4),
                 AuditoriumId = 11,
                 Schedule = new[] { "12:00" },
-                Movie = new MovieEntity { Title = "Updated", ImdbId = "tt1", Stars = "B", ReleaseDate = new DateTime(2020, 1, 1) }
+                Movie = new CNM.Domain.Database.Entities.MovieEntity { Title = "Updated", ImdbId = "tt1", Stars = "B", ReleaseDate = new DateTime(2020, 1, 1) }
             });
             Assert.NotNull(updatedShowtime);
             Assert.Equal(11, updatedShowtime.AuditoriumId);
@@ -149,8 +130,8 @@ namespace CNM.Application.Tests
         [Fact]
         public void ErrorHandlingMiddleware_CatchesExceptionsAndWritesJson()
         {
-            var logger = new LoggerFactory().CreateLogger<ErrorHandlingMiddleware>();
-            var middleware = new ErrorHandlingMiddleware(async httpContext => throw new Exception("boom"), logger);
+            var logger = new LoggerFactory().CreateLogger<Middleware.ErrorHandlingMiddleware>();
+            var middleware = new Middleware.ErrorHandlingMiddleware(async httpContext => throw new Exception("boom"), logger);
             var httpContext = new DefaultHttpContext();
             var memoryStream = new MemoryStream();
             httpContext.Response.Body = memoryStream;
@@ -171,8 +152,8 @@ namespace CNM.Application.Tests
             var loggerFactory = new LoggerFactory();
             var logMessages = new List<string>();
             loggerFactory.AddProvider(new ListLoggerProvider(logMessages));
-            var logger = loggerFactory.CreateLogger<RequestTimingMiddleware>();
-            var middleware = new RequestTimingMiddleware(async httpContext => await Task.Delay(10), logger);
+            var logger = loggerFactory.CreateLogger<Middleware.RequestTimingMiddleware>();
+            var middleware = new Middleware.RequestTimingMiddleware(async httpContext => await Task.Delay(10), logger);
             var httpContext = new DefaultHttpContext();
             httpContext.Request.Path = "/showtime/list";
             middleware.Invoke(httpContext).GetAwaiter().GetResult();

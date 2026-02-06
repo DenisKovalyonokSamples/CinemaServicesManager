@@ -1,8 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
 
-namespace CNM.Showtimes.API.Database.Entities
+namespace CNM.Domain.Database.Entities
 {
     public class ShowtimeEntity
     {

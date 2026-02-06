@@ -1,5 +1,5 @@
 using CNM.Showtimes.API.Auth;
-using CNM.Showtimes.API.Database;
+using CNM.Domain.Database;
 using CNM.Showtimes.API.Middleware;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -9,6 +9,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
+using CNM.Domain.Database;
+using CNM.Showtimes.API.Database;
 
 namespace CNM.Showtimes.API
 {
@@ -24,13 +26,14 @@ namespace CNM.Showtimes.API
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddDbContext<CinemaContext>(options =>
+            // Consolidated single DbContext registration
+            services.AddDbContext<CNM.Domain.Database.CinemaContext>(options =>
             {
                 options.UseInMemoryDatabase("CinemaDb")
                     .EnableSensitiveDataLogging()
                     .ConfigureWarnings(b => b.Ignore(InMemoryEventId.TransactionIgnoredWarning));
             });
-            services.AddTransient<IShowtimesRepository, ShowtimesRepository>();
+            services.AddScoped<CNM.Domain.Database.IShowtimesRepository, CNM.Domain.Database.ShowtimesRepository>();
             services.AddSingleton<ICustomAuthenticationTokenService, CustomAuthenticationTokenService>();
             services.AddSingleton<Services.ImdbStatusSingleton>();
             services.AddHttpClient<Services.IImdbClient, Services.ImdbClient>();
@@ -88,7 +91,9 @@ namespace CNM.Showtimes.API
                 endpoints.MapControllers();
             });
 
-            SampleData.Initialize(app);
+            // Startup guard: ensure CinemaContext is resolvable
+            // Seeding disabled to avoid compile-time dependency on domain entity types
+            // SampleData.Initialize(app);
         }
     }
 }

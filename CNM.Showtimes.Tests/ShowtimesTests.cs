@@ -63,12 +63,12 @@ namespace CNM.Showtimes.Tests
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
             };
 
-            var newShowtime = new ShowtimeEntity
+            var newShowtime = new CNM.Domain.Database.Entities.ShowtimeEntity
             {
                 Id = 1,
                 StartDate = new DateTime(2020, 2, 1),
                 EndDate = new DateTime(2020, 2, 10),
-                Movie = new MovieEntity { ImdbId = "tt42" }
+                Movie = new CNM.Domain.Database.Entities.MovieEntity { ImdbId = "tt42" }
             };
 
             var actionResult = await showtimeController.Post(newShowtime, "APIKEY");
@@ -88,7 +88,7 @@ namespace CNM.Showtimes.Tests
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
             };
 
-            var invalidShowtime = new ShowtimeEntity { Movie = new MovieEntity { ImdbId = "" } };
+            var invalidShowtime = new CNM.Domain.Database.Entities.ShowtimeEntity { Movie = new CNM.Domain.Database.Entities.MovieEntity { ImdbId = "" } };
             var actionResult = await showtimeController.Post(invalidShowtime, "APIKEY");
             var badRequest = Assert.IsType<BadRequestObjectResult>(actionResult);
             Assert.Contains("required", badRequest.Value?.ToString());
@@ -98,13 +98,13 @@ namespace CNM.Showtimes.Tests
         [Fact]
         public async Task ShowtimeController_Put_UpdatesAndFetchesImdb_WhenImdbIdPresent()
         {
-            var repository = new FakeRepo { UpdateResult = new ShowtimeEntity { Id = 2, Movie = new MovieEntity() } };
+            var repository = new FakeRepo { UpdateResult = new CNM.Domain.Database.Entities.ShowtimeEntity { Id = 2, Movie = new CNM.Domain.Database.Entities.MovieEntity() } };
             var imdbClient = new FakeImdbClient { GetById = new ImdbTitleResponse { title = "NewTitle", stars = "C,D", releaseDate = "2021-01-01" } };
             var showtimeController = new ShowtimeController(repository, imdbClient)
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
             };
-            var updatedShowtimePayload = new ShowtimeEntity { Id = 2, Movie = new MovieEntity { ImdbId = "tt99" } };
+            var updatedShowtimePayload = new CNM.Domain.Database.Entities.ShowtimeEntity { Id = 2, Movie = new CNM.Domain.Database.Entities.MovieEntity { ImdbId = "tt99" } };
             var actionResult = await showtimeController.Put(updatedShowtimePayload, "APIKEY");
             var okObjectResult = Assert.IsType<OkObjectResult>(actionResult);
             var updatedShowtime = Assert.IsType<ShowtimeEntity>(okObjectResult.Value);
@@ -121,7 +121,7 @@ namespace CNM.Showtimes.Tests
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
             };
-            var notFoundPayload = new ShowtimeEntity { Id = 3 };
+            var notFoundPayload = new CNM.Domain.Database.Entities.ShowtimeEntity { Id = 3 };
             var actionResult = await showtimeController.Put(notFoundPayload, "APIKEY");
             Assert.IsType<NotFoundResult>(actionResult);
         }
@@ -130,7 +130,7 @@ namespace CNM.Showtimes.Tests
         [Fact]
         public void ShowtimeController_Delete_NoContentOrNotFound()
         {
-            var repository = new FakeRepo { DeleteResult = new ShowtimeEntity { Id = 5 } };
+            var repository = new FakeRepo { DeleteResult = new CNM.Domain.Database.Entities.ShowtimeEntity { Id = 5 } };
             var showtimeController = new ShowtimeController(repository, new FakeImdbClient())
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
@@ -269,7 +269,7 @@ namespace CNM.Showtimes.Tests
             startup.ConfigureServices(serviceCollection);
             var serviceProvider = serviceCollection.BuildServiceProvider();
 
-            Assert.NotNull(serviceProvider.GetService<IShowtimesRepository>());
+            Assert.NotNull(serviceProvider.GetService<CNM.Domain.Database.IShowtimesRepository>());
             Assert.NotNull(serviceProvider.GetService<IImdbClient>());
             Assert.NotNull(serviceProvider.GetService<ImdbStatusSingleton>());
             Assert.NotNull(serviceProvider.GetService<IActionDescriptorCollectionProvider>());
@@ -293,39 +293,39 @@ namespace CNM.Showtimes.Tests
         }
 
         // In-memory repository test double used by controller tests.
-        private sealed class FakeRepo : IShowtimesRepository
+        private sealed class FakeRepo : CNM.Domain.Database.IShowtimesRepository
         {
-            public ShowtimeEntity DeleteResult { get; set; }
-            public ShowtimeEntity UpdateResult { get; set; }
-            public IEnumerable<ShowtimeEntity> GetCollection() => _data;
-            public IEnumerable<ShowtimeEntity> GetCollection(Func<IQueryable<ShowtimeEntity>, bool> filter)
+            public CNM.Domain.Database.Entities.ShowtimeEntity DeleteResult { get; set; }
+            public CNM.Domain.Database.Entities.ShowtimeEntity UpdateResult { get; set; }
+            public IEnumerable<CNM.Domain.Database.Entities.ShowtimeEntity> GetCollection() => _data;
+            public IEnumerable<CNM.Domain.Database.Entities.ShowtimeEntity> GetCollection(Func<IQueryable<CNM.Domain.Database.Entities.ShowtimeEntity>, bool> filter)
             {
                 var q = _data.AsQueryable();
-                return filter(q) ? _data : Enumerable.Empty<ShowtimeEntity>();
+                return filter(q) ? _data : Enumerable.Empty<CNM.Domain.Database.Entities.ShowtimeEntity>();
             }
-            public ShowtimeEntity GetByMovie(Func<IQueryable<MovieEntity>, bool> filter) => null;
-            public ShowtimeEntity Add(ShowtimeEntity showtimeEntity)
+            public CNM.Domain.Database.Entities.ShowtimeEntity GetByMovie(Func<IQueryable<CNM.Domain.Database.Entities.MovieEntity>, bool> filter) => null;
+            public CNM.Domain.Database.Entities.ShowtimeEntity Add(CNM.Domain.Database.Entities.ShowtimeEntity showtimeEntity)
             {
                 _data.Add(showtimeEntity);
                 return showtimeEntity;
             }
-            public ShowtimeEntity Update(ShowtimeEntity showtimeEntity) => UpdateResult;
-            public ShowtimeEntity Delete(int id) => DeleteResult;
-            private readonly List<ShowtimeEntity> _data = new List<ShowtimeEntity>
+            public CNM.Domain.Database.Entities.ShowtimeEntity Update(CNM.Domain.Database.Entities.ShowtimeEntity showtimeEntity) => UpdateResult;
+            public CNM.Domain.Database.Entities.ShowtimeEntity Delete(int id) => DeleteResult;
+            private readonly List<CNM.Domain.Database.Entities.ShowtimeEntity> _data = new List<CNM.Domain.Database.Entities.ShowtimeEntity>
             {
-                new ShowtimeEntity
+                new CNM.Domain.Database.Entities.ShowtimeEntity
                 {
                     Id = 1,
                     StartDate = new DateTime(2020, 1, 1),
                     EndDate = new DateTime(2020, 1, 10),
-                    Movie = new MovieEntity { Title = "Star Movie" }
+                    Movie = new CNM.Domain.Database.Entities.MovieEntity { Title = "Star Movie" }
                 },
-                new ShowtimeEntity
+                new CNM.Domain.Database.Entities.ShowtimeEntity
                 {
                     Id = 2,
                     StartDate = new DateTime(2020, 1, 20),
                     EndDate = new DateTime(2020, 1, 25),
-                    Movie = new MovieEntity { Title = "Another" }
+                    Movie = new CNM.Domain.Database.Entities.MovieEntity { Title = "Another" }
                 }
             };
         }
