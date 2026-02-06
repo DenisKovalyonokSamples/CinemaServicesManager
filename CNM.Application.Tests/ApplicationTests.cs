@@ -24,6 +24,7 @@ namespace CNM.Application.Tests
 {
     public class ApplicationTests
     {
+        // Verifies the host builder can be created and built successfully.
         [Fact]
         public void Program_CreateHostBuilder_Builds()
         {
@@ -33,70 +34,74 @@ namespace CNM.Application.Tests
             Assert.NotNull(host.Services);
         }
 
+        // Ensures ConfigureServices registers EF Core, repository, MVC, and health checks.
         [Fact]
         public void Startup_ConfigureServices_RegistersDependenciesAndHealthChecks()
         {
-            var services = new ServiceCollection();
-            var config = new ConfigurationBuilder().Build();
-            var startup = new Startup(config);
-            var env = new SimpleWebHostEnvironment { EnvironmentName = Environments.Development };
-            services.AddSingleton<IWebHostEnvironment>(env);
+            var serviceCollection = new ServiceCollection();
+            var configuration = new ConfigurationBuilder().Build();
+            var startup = new Startup(configuration);
+            var environment = new SimpleWebHostEnvironment { EnvironmentName = Environments.Development };
+            serviceCollection.AddSingleton<IWebHostEnvironment>(environment);
 
-            startup.ConfigureServices(services);
-            var provider = services.BuildServiceProvider();
+            startup.ConfigureServices(serviceCollection);
+            var serviceProvider = serviceCollection.BuildServiceProvider();
 
-            Assert.NotNull(provider.GetService<IShowtimesRepository>());
-            Assert.NotNull(provider.GetService<CinemaContext>());
-            Assert.NotNull(provider.GetService<IActionDescriptorCollectionProvider>());
-            Assert.NotNull(provider.GetService<Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckService>());
+            Assert.NotNull(serviceProvider.GetService<IShowtimesRepository>());
+            Assert.NotNull(serviceProvider.GetService<CinemaContext>());
+            Assert.NotNull(serviceProvider.GetService<IActionDescriptorCollectionProvider>());
+            Assert.NotNull(serviceProvider.GetService<Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckService>());
         }
 
+        // Smoke test for Configure: pipeline wiring, sample data init, and endpoints mapping.
         [Fact]
         public void Startup_Configure_SetsPipeline_InitializesSampleData_AndMapsEndpoints()
         {
-            var services = new ServiceCollection();
-            var config = new ConfigurationBuilder().Build();
-            var startup = new Startup(config);
-            var env = new SimpleWebHostEnvironment { EnvironmentName = Environments.Production };
-            services.AddSingleton<IWebHostEnvironment>(env);
+            var serviceCollection = new ServiceCollection();
+            var configuration = new ConfigurationBuilder().Build();
+            var startup = new Startup(configuration);
+            var environment = new SimpleWebHostEnvironment { EnvironmentName = Environments.Production };
+            serviceCollection.AddSingleton<IWebHostEnvironment>(environment);
             // Add minimal services used in Configure
-            services.AddRouting();
-            services.AddControllers();
-            services.AddDbContext<CinemaContext>(opts => opts.UseInMemoryDatabase("test"));
-            services.AddTransient<IShowtimesRepository, ShowtimesRepository>();
-            var provider = services.BuildServiceProvider();
-            var app = new ApplicationBuilder(provider);
+            serviceCollection.AddRouting();
+            serviceCollection.AddControllers();
+            serviceCollection.AddDbContext<CinemaContext>(opts => opts.UseInMemoryDatabase("test"));
+            serviceCollection.AddTransient<IShowtimesRepository, ShowtimesRepository>();
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+            var appBuilder = new ApplicationBuilder(serviceProvider);
 
-            var ex = Record.Exception(() => startup.Configure(app, env));
-            Assert.Null(ex);
+            var exception = Record.Exception(() => startup.Configure(appBuilder, environment));
+            Assert.Null(exception);
         }
 
+        // Validates that SampleData seeds the in-memory database.
         [Fact]
         public void SampleData_Initialize_PopulatesDatabase()
         {
-            var services = new ServiceCollection();
-            services.AddDbContext<CinemaContext>(opts => opts.UseInMemoryDatabase("sample"));
-            var provider = services.BuildServiceProvider();
-            var app = new ApplicationBuilder(provider);
+            var serviceCollection = new ServiceCollection();
+            serviceCollection.AddDbContext<CinemaContext>(opts => opts.UseInMemoryDatabase("sample"));
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+            var appBuilder = new ApplicationBuilder(serviceProvider);
 
-            SampleData.Initialize(app);
+            SampleData.Initialize(appBuilder);
 
-            using var scope = provider.CreateScope();
-            var ctx = scope.ServiceProvider.GetRequiredService<CinemaContext>();
-            Assert.True(ctx.Auditoriums.Any());
-            Assert.True(ctx.Showtimes.Any());
-            Assert.True(ctx.Movies.Any());
+            using var scope = serviceProvider.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<CinemaContext>();
+            Assert.True(dbContext.Auditoriums.Any());
+            Assert.True(dbContext.Showtimes.Any());
+            Assert.True(dbContext.Movies.Any());
         }
 
+        // Covers repository add, query, update, and delete flows against in-memory EF Core.
         [Fact]
         public void ShowtimesRepository_Add_Update_Delete_AndQueries_Work()
         {
             var options = new DbContextOptionsBuilder<CinemaContext>().UseInMemoryDatabase("repo").Options;
-            using var ctx = new CinemaContext(options);
-            var repo = new ShowtimesRepository(ctx);
+            using var dbContext = new CinemaContext(options);
+            var repository = new ShowtimesRepository(dbContext);
 
             // Add
-            var entity = new ShowtimeEntity
+            var newShowtime = new ShowtimeEntity
             {
                 Id = 1,
                 StartDate = new DateTime(2020, 1, 1),
@@ -105,19 +110,19 @@ namespace CNM.Application.Tests
                 Schedule = new[] { "10:00" },
                 Movie = new MovieEntity { Title = "First", ImdbId = "tt1", Stars = "A", ReleaseDate = new DateTime(2019, 1, 1) }
             };
-            var added = repo.Add(entity);
-            Assert.Equal(1, ctx.Showtimes.Count());
+            var addedShowtime = repository.Add(newShowtime);
+            Assert.Equal(1, dbContext.Showtimes.Count());
 
             // GetCollection (no filter returns all)
-            var all = repo.GetCollection();
-            Assert.Single(all);
+            var allShowtimes = repository.GetCollection();
+            Assert.Single(allShowtimes);
 
             // GetCollection with filter (matching)
-            var filtered = repo.GetCollection(q => q.Any(x => x.AuditoriumId == 10));
-            Assert.Single(filtered);
+            var filteredShowtimes = repository.GetCollection(q => q.Any(x => x.AuditoriumId == 10));
+            Assert.Single(filteredShowtimes);
 
             // Update existing
-            var updated = repo.Update(new ShowtimeEntity
+            var updatedShowtime = repository.Update(new ShowtimeEntity
             {
                 Id = 1,
                 StartDate = new DateTime(2020, 1, 3),
@@ -126,52 +131,55 @@ namespace CNM.Application.Tests
                 Schedule = new[] { "12:00" },
                 Movie = new MovieEntity { Title = "Updated", ImdbId = "tt1", Stars = "B", ReleaseDate = new DateTime(2020, 1, 1) }
             });
-            Assert.NotNull(updated);
-            Assert.Equal(11, updated.AuditoriumId);
-            Assert.Equal("Updated", updated.Movie.Title);
+            Assert.NotNull(updatedShowtime);
+            Assert.Equal(11, updatedShowtime.AuditoriumId);
+            Assert.Equal("Updated", updatedShowtime.Movie.Title);
 
             // Delete existing
-            var deleted = repo.Delete(1);
-            Assert.NotNull(deleted);
-            Assert.Empty(ctx.Showtimes);
+            var deletedShowtime = repository.Delete(1);
+            Assert.NotNull(deletedShowtime);
+            Assert.Empty(dbContext.Showtimes);
 
             // Delete non-existing
-            var deletedNull = repo.Delete(2);
-            Assert.Null(deletedNull);
+            var nonExistingDeletedShowtime = repository.Delete(2);
+            Assert.Null(nonExistingDeletedShowtime);
         }
 
+        // Ensures the error handling middleware catches exceptions and returns JSON 500.
         [Fact]
         public void ErrorHandlingMiddleware_CatchesExceptionsAndWritesJson()
         {
             var logger = new LoggerFactory().CreateLogger<ErrorHandlingMiddleware>();
-            var mw = new ErrorHandlingMiddleware(async ctx => throw new Exception("boom"), logger);
-            var ctx = new DefaultHttpContext();
-            var ms = new MemoryStream();
-            ctx.Response.Body = ms;
+            var middleware = new ErrorHandlingMiddleware(async httpContext => throw new Exception("boom"), logger);
+            var httpContext = new DefaultHttpContext();
+            var memoryStream = new MemoryStream();
+            httpContext.Response.Body = memoryStream;
 
-            var ex = Record.ExceptionAsync(() => mw.Invoke(ctx)).Result;
-            Assert.Null(ex);
-            ms.Position = 0;
-            var text = new StreamReader(ms).ReadToEnd();
-            Assert.Contains("internal_server_error", text);
-            Assert.Equal("application/json", ctx.Response.ContentType);
-            Assert.Equal(500, ctx.Response.StatusCode);
+            var exception = Record.ExceptionAsync(() => middleware.Invoke(httpContext)).Result;
+            Assert.Null(exception);
+            memoryStream.Position = 0;
+            var responseText = new StreamReader(memoryStream).ReadToEnd();
+            Assert.Contains("internal_server_error", responseText);
+            Assert.Equal("application/json", httpContext.Response.ContentType);
+            Assert.Equal(500, httpContext.Response.StatusCode);
         }
 
+        // Confirms timing middleware logs for requests under /showtime path.
         [Fact]
         public void RequestTimingMiddleware_LogsForShowtimeRoutes()
         {
-            var factory = new LoggerFactory();
-            var logs = new List<string>();
-            factory.AddProvider(new ListLoggerProvider(logs));
-            var logger = factory.CreateLogger<RequestTimingMiddleware>();
-            var mw = new RequestTimingMiddleware(async ctx => await Task.Delay(10), logger);
-            var ctx = new DefaultHttpContext();
-            ctx.Request.Path = "/showtime/list";
-            mw.Invoke(ctx).GetAwaiter().GetResult();
-            Assert.True(logs.Any(l => l.Contains("ShowtimeController request")));
+            var loggerFactory = new LoggerFactory();
+            var logMessages = new List<string>();
+            loggerFactory.AddProvider(new ListLoggerProvider(logMessages));
+            var logger = loggerFactory.CreateLogger<RequestTimingMiddleware>();
+            var middleware = new RequestTimingMiddleware(async httpContext => await Task.Delay(10), logger);
+            var httpContext = new DefaultHttpContext();
+            httpContext.Request.Path = "/showtime/list";
+            middleware.Invoke(httpContext).GetAwaiter().GetResult();
+            Assert.True(logMessages.Any(message => message.Contains("ShowtimeController request")));
         }
 
+        // Minimal IWebHostEnvironment implementation for tests.
         private sealed class SimpleWebHostEnvironment : IWebHostEnvironment
         {
             public string EnvironmentName { get; set; } = Environments.Production;
@@ -182,6 +190,7 @@ namespace CNM.Application.Tests
             public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
         }
 
+        // Simple logger provider capturing formatted log messages to a list.
         private sealed class ListLoggerProvider : ILoggerProvider
         {
             private readonly List<string> _logs;

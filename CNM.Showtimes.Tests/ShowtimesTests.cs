@@ -30,38 +30,40 @@ namespace CNM.Showtimes.Tests
 {
     public class ShowtimesTests
     {
+        // Filters list by date and title; validates only matching showtime is returned.
         [Fact]
         public void ShowtimeController_Get_FiltersByDateAndTitle()
         {
-            var repo = new FakeRepo();
-            var imdb = new FakeImdbClient();
-            var controller = new ShowtimeController(repo, imdb)
+            var repository = new FakeRepo();
+            var imdbClient = new FakeImdbClient();
+            var showtimeController = new ShowtimeController(repository, imdbClient)
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
             };
 
-            var date = new DateTime(2020, 1, 5);
-            var result = controller.Get(date, "Star");
-            var ok = Assert.IsType<OkObjectResult>(result);
-            var list = Assert.IsAssignableFrom<IEnumerable<ShowtimeEntity>>(ok.Value);
-            Assert.Single(list);
-            Assert.Equal("Star Movie", list.First().Movie.Title);
+            var filterDate = new DateTime(2020, 1, 5);
+            var actionResult = showtimeController.Get(filterDate, "Star");
+            var okObjectResult = Assert.IsType<OkObjectResult>(actionResult);
+            var returnedShowtimes = Assert.IsAssignableFrom<IEnumerable<ShowtimeEntity>>(okObjectResult.Value);
+            Assert.Single(returnedShowtimes);
+            Assert.Equal("Star Movie", returnedShowtimes.First().Movie.Title);
         }
 
+        // Creates a showtime, fetches IMDB data, and enriches movie fields before returning Created.
         [Fact]
         public async Task ShowtimeController_Post_ValidatesAndCreates_AndFetchesImdb()
         {
-            var repo = new FakeRepo();
-            var imdb = new FakeImdbClient
+            var repository = new FakeRepo();
+            var imdbClient = new FakeImdbClient
             {
                 GetById = new ImdbTitleResponse { id = "tt42", title = "Answer", stars = "A,B", releaseDate = "2020-02-02" }
             };
-            var controller = new ShowtimeController(repo, imdb)
+            var showtimeController = new ShowtimeController(repository, imdbClient)
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
             };
 
-            var payload = new ShowtimeEntity
+            var newShowtime = new ShowtimeEntity
             {
                 Id = 1,
                 StartDate = new DateTime(2020, 2, 1),
@@ -69,164 +71,174 @@ namespace CNM.Showtimes.Tests
                 Movie = new MovieEntity { ImdbId = "tt42" }
             };
 
-            var result = await controller.Post(payload, "APIKEY");
-            var created = Assert.IsType<CreatedResult>(result);
-            var entity = Assert.IsType<ShowtimeEntity>(created.Value);
-            Assert.Equal("Answer", entity.Movie.Title);
-            Assert.Equal("A,B", entity.Movie.Stars);
-            Assert.Equal(new DateTime(2020, 2, 2), entity.Movie.ReleaseDate);
+            var actionResult = await showtimeController.Post(newShowtime, "APIKEY");
+            var createdResult = Assert.IsType<CreatedResult>(actionResult);
+            var createdShowtime = Assert.IsType<ShowtimeEntity>(createdResult.Value);
+            Assert.Equal("Answer", createdShowtime.Movie.Title);
+            Assert.Equal("A,B", createdShowtime.Movie.Stars);
+            Assert.Equal(new DateTime(2020, 2, 2), createdShowtime.Movie.ReleaseDate);
         }
 
+        // Returns BadRequest when POST payload has missing/empty imdb id.
         [Fact]
         public async Task ShowtimeController_Post_ReturnsBadRequest_WhenMissingImdbId()
         {
-            var controller = new ShowtimeController(new FakeRepo(), new FakeImdbClient())
+            var showtimeController = new ShowtimeController(new FakeRepo(), new FakeImdbClient())
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
             };
 
-            var payload = new ShowtimeEntity { Movie = new MovieEntity { ImdbId = "" } };
-            var result = await controller.Post(payload, "APIKEY");
-            var bad = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Contains("required", bad.Value?.ToString());
+            var invalidShowtime = new ShowtimeEntity { Movie = new MovieEntity { ImdbId = "" } };
+            var actionResult = await showtimeController.Post(invalidShowtime, "APIKEY");
+            var badRequest = Assert.IsType<BadRequestObjectResult>(actionResult);
+            Assert.Contains("required", badRequest.Value?.ToString());
         }
 
+        // Updates showtime and refreshes IMDB fields when imdb id is present.
         [Fact]
         public async Task ShowtimeController_Put_UpdatesAndFetchesImdb_WhenImdbIdPresent()
         {
-            var repo = new FakeRepo { UpdateResult = new ShowtimeEntity { Id = 2, Movie = new MovieEntity() } };
-            var imdb = new FakeImdbClient { GetById = new ImdbTitleResponse { title = "NewTitle", stars = "C,D", releaseDate = "2021-01-01" } };
-            var controller = new ShowtimeController(repo, imdb)
+            var repository = new FakeRepo { UpdateResult = new ShowtimeEntity { Id = 2, Movie = new MovieEntity() } };
+            var imdbClient = new FakeImdbClient { GetById = new ImdbTitleResponse { title = "NewTitle", stars = "C,D", releaseDate = "2021-01-01" } };
+            var showtimeController = new ShowtimeController(repository, imdbClient)
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
             };
-            var payload = new ShowtimeEntity { Id = 2, Movie = new MovieEntity { ImdbId = "tt99" } };
-            var result = await controller.Put(payload, "APIKEY");
-            var ok = Assert.IsType<OkObjectResult>(result);
-            var entity = Assert.IsType<ShowtimeEntity>(ok.Value);
-            Assert.Equal("NewTitle", entity.Movie.Title);
-            Assert.Equal("C,D", entity.Movie.Stars);
-            Assert.Equal(new DateTime(2021, 1, 1), entity.Movie.ReleaseDate);
+            var updatedShowtimePayload = new ShowtimeEntity { Id = 2, Movie = new MovieEntity { ImdbId = "tt99" } };
+            var actionResult = await showtimeController.Put(updatedShowtimePayload, "APIKEY");
+            var okObjectResult = Assert.IsType<OkObjectResult>(actionResult);
+            var updatedShowtime = Assert.IsType<ShowtimeEntity>(okObjectResult.Value);
+            Assert.Equal("NewTitle", updatedShowtime.Movie.Title);
+            Assert.Equal("C,D", updatedShowtime.Movie.Stars);
+            Assert.Equal(new DateTime(2021, 1, 1), updatedShowtime.Movie.ReleaseDate);
         }
 
+        // Returns NotFound when repository update yields null.
         [Fact]
         public async Task ShowtimeController_Put_ReturnsNotFound_WhenUpdateNull()
         {
-            var controller = new ShowtimeController(new FakeRepo { UpdateResult = null }, new FakeImdbClient())
+            var showtimeController = new ShowtimeController(new FakeRepo { UpdateResult = null }, new FakeImdbClient())
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
             };
-            var payload = new ShowtimeEntity { Id = 3 };
-            var result = await controller.Put(payload, "APIKEY");
-            Assert.IsType<NotFoundResult>(result);
+            var notFoundPayload = new ShowtimeEntity { Id = 3 };
+            var actionResult = await showtimeController.Put(notFoundPayload, "APIKEY");
+            Assert.IsType<NotFoundResult>(actionResult);
         }
 
+        // Delete returns NoContent for existing id; NotFound otherwise.
         [Fact]
         public void ShowtimeController_Delete_NoContentOrNotFound()
         {
-            var repo = new FakeRepo { DeleteResult = new ShowtimeEntity { Id = 5 } };
-            var controller = new ShowtimeController(repo, new FakeImdbClient())
+            var repository = new FakeRepo { DeleteResult = new ShowtimeEntity { Id = 5 } };
+            var showtimeController = new ShowtimeController(repository, new FakeImdbClient())
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
             };
-            var nc = controller.Delete(5);
-            Assert.IsType<NoContentResult>(nc);
+            var noContentResult = showtimeController.Delete(5);
+            Assert.IsType<NoContentResult>(noContentResult);
 
-            controller = new ShowtimeController(new FakeRepo { DeleteResult = null }, new FakeImdbClient())
+            showtimeController = new ShowtimeController(new FakeRepo { DeleteResult = null }, new FakeImdbClient())
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
             };
-            var nf = controller.Delete(6);
-            Assert.IsType<NotFoundResult>(nf);
+            var notFoundResult = showtimeController.Delete(6);
+            Assert.IsType<NotFoundResult>(notFoundResult);
         }
 
+        // Middleware catches exceptions and writes JSON 500 response.
         [Fact]
         public void ErrorHandlingMiddleware_CatchesExceptionsAndWritesJson()
         {
             var logger = new LoggerFactory().CreateLogger<ErrorHandlingMiddleware>();
-            var mw = new ErrorHandlingMiddleware(async ctx => throw new Exception("boom"), logger);
-            var ctx = new DefaultHttpContext();
-            var ms = new MemoryStream();
-            ctx.Response.Body = ms;
+            var errorHandlingMiddleware = new ErrorHandlingMiddleware(async httpContext => throw new Exception("boom"), logger);
+            var httpContext = new DefaultHttpContext();
+            var responseStream = new MemoryStream();
+            httpContext.Response.Body = responseStream;
 
-            var ex = Record.ExceptionAsync(() => mw.Invoke(ctx)).Result;
-            Assert.Null(ex);
-            ms.Position = 0;
-            var text = new StreamReader(ms).ReadToEnd();
-            Assert.Contains("internal_server_error", text);
-            Assert.Equal("application/json", ctx.Response.ContentType);
-            Assert.Equal(500, ctx.Response.StatusCode);
+            var exception = Record.ExceptionAsync(() => errorHandlingMiddleware.Invoke(httpContext)).Result;
+            Assert.Null(exception);
+            responseStream.Position = 0;
+            var responseText = new StreamReader(responseStream).ReadToEnd();
+            Assert.Contains("internal_server_error", responseText);
+            Assert.Equal("application/json", httpContext.Response.ContentType);
+            Assert.Equal(500, httpContext.Response.StatusCode);
         }
 
+        // Middleware logs timings for requests under /showtime path.
         [Fact]
         public void RequestTimingMiddleware_LogsForShowtimeRoutes()
         {
-            var factory = new LoggerFactory();
-            var logger = factory.CreateLogger<RequestTimingMiddleware>();
-            var logs = new List<string>();
-            factory.AddProvider(new ListLoggerProvider(logs));
-            var loggerWithProvider = factory.CreateLogger<RequestTimingMiddleware>();
-            var mw = new RequestTimingMiddleware(async ctx => await Task.Delay(10), loggerWithProvider);
-            var ctx = new DefaultHttpContext();
-            ctx.Request.Path = "/showtime/list";
-            mw.Invoke(ctx).GetAwaiter().GetResult();
-            Assert.True(logs.Any(l => l.Contains("ShowtimeController request")));
+            var loggerFactory = new LoggerFactory();
+            var logger = loggerFactory.CreateLogger<RequestTimingMiddleware>();
+            var logMessages = new List<string>();
+            loggerFactory.AddProvider(new ListLoggerProvider(logMessages));
+            var loggerWithProvider = loggerFactory.CreateLogger<RequestTimingMiddleware>();
+            var requestTimingMiddleware = new RequestTimingMiddleware(async httpContext => await Task.Delay(10), loggerWithProvider);
+            var httpContext = new DefaultHttpContext();
+            httpContext.Request.Path = "/showtime/list";
+            requestTimingMiddleware.Invoke(httpContext).GetAwaiter().GetResult();
+            Assert.True(logMessages.Any(message => message.Contains("ShowtimeController request")));
         }
 
+        // Background service increments shared singleton on each ping iteration.
         [Fact]
         public async Task ImdbStatusBackgroundService_IncrementsSingleton_OnPing()
         {
-            var logs = new List<string>();
-            var provider = new LoggerFactory();
-            provider.AddProvider(new ListLoggerProvider(logs));
-            var client = new FakeImdbClient { Ping = true };
-            var singleton = new ImdbStatusSingleton();
-            var svc = new ImdbStatusBackgroundService(provider.CreateLogger<ImdbStatusBackgroundService>(), client, singleton);
+            var logMessages = new List<string>();
+            var loggerFactory = new LoggerFactory();
+            loggerFactory.AddProvider(new ListLoggerProvider(logMessages));
+            var imdbClient = new FakeImdbClient { Ping = true };
+            var statusSingleton = new ImdbStatusSingleton();
+            var backgroundService = new ImdbStatusBackgroundService(loggerFactory.CreateLogger<ImdbStatusBackgroundService>(), imdbClient, statusSingleton);
 
-            using var cts = new CancellationTokenSource();
-            cts.CancelAfter(50);
-            await svc.StartAsync(cts.Token);
+            using var cancellationTokenSource = new CancellationTokenSource();
+            cancellationTokenSource.CancelAfter(50);
+            await backgroundService.StartAsync(cancellationTokenSource.Token);
             await Task.Delay(60);
-            await svc.StopAsync(cts.Token);
+            await backgroundService.StopAsync(cancellationTokenSource.Token);
 
-            Assert.True(singleton.StatusChecks >= 1);
+            Assert.True(statusSingleton.StatusChecks >= 1);
         }
 
+        // Token service parses base64 token into claims; throws for invalid.
         [Fact]
         public void CustomAuthenticationTokenService_Read_ParsesOrThrows()
         {
-            var svc = new CustomAuthenticationTokenService();
-            var principal = svc.Read(Convert.ToBase64String(Encoding.UTF8.GetBytes("user|Read")));
+            var tokenService = new CustomAuthenticationTokenService();
+            var principal = tokenService.Read(Convert.ToBase64String(Encoding.UTF8.GetBytes("user|Read")));
             Assert.Equal("user", principal.FindFirstValue(ClaimTypes.NameIdentifier));
             Assert.Equal("Read", principal.FindFirstValue(ClaimTypes.Role));
 
-            Assert.Throws<ReadTokenException>(() => svc.Read("notbase64"));
+            Assert.Throws<ReadTokenException>(() => tokenService.Read("notbase64"));
         }
 
+        // Authentication handler succeeds with valid header; fails with invalid.
         [Fact]
         public void CustomAuthenticationHandler_SucceedsOrFails()
         {
-            var tokenSvc = new CustomAuthenticationTokenService();
-            var opts = new OptionsMonitorInline<CustomAuthenticationSchemeOptions>(new CustomAuthenticationSchemeOptions());
-            var handler = new CustomAuthenticationHandler(opts, new LoggerFactory(), System.Text.Encodings.Web.UrlEncoder.Default, new SystemClock(), tokenSvc);
+            var tokenService = new CustomAuthenticationTokenService();
+            var optionsMonitor = new OptionsMonitorInline<CustomAuthenticationSchemeOptions>(new CustomAuthenticationSchemeOptions());
+            var authenticationHandler = new CustomAuthenticationHandler(optionsMonitor, new LoggerFactory(), System.Text.Encodings.Web.UrlEncoder.Default, new SystemClock(), tokenService);
 
-            var ctx = new DefaultHttpContext();
-            ctx.RequestServices = new ServiceCollection().BuildServiceProvider();
-            ctx.Request.Headers["ApiKey"] = Convert.ToBase64String(Encoding.UTF8.GetBytes("user|Read"));
-            handler.InitializeAsync(new AuthenticationScheme(CustomAuthenticationSchemeOptions.AuthenticationScheme, null, typeof(CustomAuthenticationHandler)), ctx);
-            var result = handler.AuthenticateAsync().GetAwaiter().GetResult();
-            Assert.True(result.Succeeded);
+            var httpContext = new DefaultHttpContext();
+            httpContext.RequestServices = new ServiceCollection().BuildServiceProvider();
+            httpContext.Request.Headers["ApiKey"] = Convert.ToBase64String(Encoding.UTF8.GetBytes("user|Read"));
+            authenticationHandler.InitializeAsync(new AuthenticationScheme(CustomAuthenticationSchemeOptions.AuthenticationScheme, null, typeof(CustomAuthenticationHandler)), httpContext);
+            var authenticateResult = authenticationHandler.AuthenticateAsync().GetAwaiter().GetResult();
+            Assert.True(authenticateResult.Succeeded);
 
-            ctx = new DefaultHttpContext();
-            ctx.RequestServices = new ServiceCollection().BuildServiceProvider();
-            ctx.Request.Headers["ApiKey"] = "invalid";
-            handler.InitializeAsync(new AuthenticationScheme(CustomAuthenticationSchemeOptions.AuthenticationScheme, null, typeof(CustomAuthenticationHandler)), ctx);
-            result = handler.AuthenticateAsync().GetAwaiter().GetResult();
-            Assert.False(result.Succeeded);
+            httpContext = new DefaultHttpContext();
+            httpContext.RequestServices = new ServiceCollection().BuildServiceProvider();
+            httpContext.Request.Headers["ApiKey"] = "invalid";
+            authenticationHandler.InitializeAsync(new AuthenticationScheme(CustomAuthenticationSchemeOptions.AuthenticationScheme, null, typeof(CustomAuthenticationHandler)), httpContext);
+            authenticateResult = authenticationHandler.AuthenticateAsync().GetAwaiter().GetResult();
+            Assert.False(authenticateResult.Succeeded);
 
             // local inline options monitor stub
         }
 
+        // Simple inline IOptionsMonitor implementation for handler initialization.
         private sealed class OptionsMonitorInline<T> : Microsoft.Extensions.Options.IOptionsMonitor<T>
         {
             private readonly T _current;
@@ -236,47 +248,51 @@ namespace CNM.Showtimes.Tests
             public IDisposable OnChange(Action<T, string> listener) => null;
         }
 
+        // Smoke test: host builder creates and builds successfully.
         [Fact]
         public void Program_CreateHostBuilder_Builds()
         {
-            var builder = Program.CreateHostBuilder(Array.Empty<string>());
-            Assert.NotNull(builder);
-            using var host = builder.Build();
+            var hostBuilder = Program.CreateHostBuilder(Array.Empty<string>());
+            Assert.NotNull(hostBuilder);
+            using var host = hostBuilder.Build();
             Assert.NotNull(host.Services);
         }
 
+        // Ensures Startup.ConfigureServices registers required services.
         [Fact]
         public void Startup_ConfigureServices_RegistersDependencies()
         {
-            var services = new ServiceCollection();
-            var config = new ConfigurationBuilder().Build();
-            var startup = new Startup(config);
+            var serviceCollection = new ServiceCollection();
+            var configuration = new ConfigurationBuilder().Build();
+            var startup = new Startup(configuration);
 
-            startup.ConfigureServices(services);
-            var provider = services.BuildServiceProvider();
+            startup.ConfigureServices(serviceCollection);
+            var serviceProvider = serviceCollection.BuildServiceProvider();
 
-            Assert.NotNull(provider.GetService<IShowtimesRepository>());
-            Assert.NotNull(provider.GetService<IImdbClient>());
-            Assert.NotNull(provider.GetService<ImdbStatusSingleton>());
-            Assert.NotNull(provider.GetService<IActionDescriptorCollectionProvider>());
+            Assert.NotNull(serviceProvider.GetService<IShowtimesRepository>());
+            Assert.NotNull(serviceProvider.GetService<IImdbClient>());
+            Assert.NotNull(serviceProvider.GetService<ImdbStatusSingleton>());
+            Assert.NotNull(serviceProvider.GetService<IActionDescriptorCollectionProvider>());
         }
 
+        // Smoke test: Startup.Configure pipeline executes without throwing.
         [Fact]
         public void Startup_Configure_DoesNotThrow()
         {
-            var services = new ServiceCollection();
-            var config = new ConfigurationBuilder().Build();
-            var startup = new Startup(config);
-            startup.ConfigureServices(services);
+            var serviceCollection = new ServiceCollection();
+            var configuration = new ConfigurationBuilder().Build();
+            var startup = new Startup(configuration);
+            startup.ConfigureServices(serviceCollection);
 
-            var provider = services.BuildServiceProvider();
-            var app = new ApplicationBuilder(provider);
-            var env = new SimpleWebHostEnvironment { EnvironmentName = Environments.Development };
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+            var appBuilder = new ApplicationBuilder(serviceProvider);
+            var environment = new SimpleWebHostEnvironment { EnvironmentName = Environments.Development };
 
-            var ex = Record.Exception(() => startup.Configure(app, env));
-            Assert.Null(ex);
+            var exception = Record.Exception(() => startup.Configure(appBuilder, environment));
+            Assert.Null(exception);
         }
 
+        // In-memory repository test double used by controller tests.
         private sealed class FakeRepo : IShowtimesRepository
         {
             public ShowtimeEntity DeleteResult { get; set; }
@@ -314,6 +330,7 @@ namespace CNM.Showtimes.Tests
             };
         }
 
+        // IImdbClient stub with configurable responses for tests.
         private sealed class FakeImdbClient : IImdbClient
         {
             public bool Ping { get; set; }
@@ -322,6 +339,7 @@ namespace CNM.Showtimes.Tests
             public Task<ImdbTitleResponse> GetByIdAsync(string imdbId, string apiKey) => Task.FromResult(GetById);
         }
 
+        // Logger provider capturing formatted messages to a list for assertions.
         private sealed class ListLoggerProvider : ILoggerProvider
         {
             private readonly List<string> _logs;
@@ -341,6 +359,7 @@ namespace CNM.Showtimes.Tests
             }
         }
 
+        // Minimal IWebHostEnvironment implementation for Startup tests.
         private sealed class SimpleWebHostEnvironment : IWebHostEnvironment
         {
             public string EnvironmentName { get; set; } = Environments.Production;

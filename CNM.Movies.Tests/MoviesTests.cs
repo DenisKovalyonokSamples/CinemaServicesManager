@@ -23,145 +23,156 @@ namespace CNM.Movies.Tests
 {
     public class MoviesTests
     {
+        // Verifies MoviesController.Ping returns status based on IImdbClient.PingAsync.
         [Theory]
         [InlineData(true, "ok")]
         [InlineData(false, "fail")]
         public async Task MoviesController_Ping_ReturnsExpectedStatus(bool pingResult, string expected)
         {
-            var fake = new FakeImdbClient { Ping = pingResult };
-            var controller = new MoviesController(fake)
+            var fakeImdbClient = new FakeImdbClient { Ping = pingResult };
+            var moviesController = new MoviesController(fakeImdbClient)
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
             };
 
-            var result = await controller.Ping();
-            var ok = Assert.IsType<OkObjectResult>(result);
-            var value = ok.Value;
-            var prop = value.GetType().GetProperty("status");
-            Assert.Equal(expected, prop.GetValue(value)?.ToString());
+            var actionResult = await moviesController.Ping();
+            var okObjectResult = Assert.IsType<OkObjectResult>(actionResult);
+            var responseValue = okObjectResult.Value;
+            var statusProperty = responseValue.GetType().GetProperty("status");
+            Assert.Equal(expected, statusProperty.GetValue(responseValue)?.ToString());
         }
 
+        // Ensures MoviesController.GetById returns Ok with model and passes imdbId/apiKey to client.
         [Fact]
         public async Task MoviesController_GetById_ReturnsOkWithClientResult_AndPassesParams()
         {
-            var fake = new FakeImdbClient
+            var fakeImdbClient = new FakeImdbClient
             {
                 GetById = new ImdbTitleResponse { id = "tt123", title = "The Film", stars = "A,B", releaseDate = "2020-01-01" }
             };
-            var controller = new MoviesController(fake)
+            var moviesController = new MoviesController(fakeImdbClient)
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
             };
 
-            var result = await controller.GetById("tt123", "APIKEY");
+            var actionResult = await moviesController.GetById("tt123", "APIKEY");
 
-            var ok = Assert.IsType<OkObjectResult>(result);
-            var model = Assert.IsType<ImdbTitleResponse>(ok.Value);
-            Assert.Equal("tt123", model.id);
-            Assert.Equal("APIKEY", fake.LastApiKey);
-            Assert.Equal("tt123", fake.LastImdbId);
+            var okObjectResult = Assert.IsType<OkObjectResult>(actionResult);
+            var responseModel = Assert.IsType<ImdbTitleResponse>(okObjectResult.Value);
+            Assert.Equal("tt123", responseModel.id);
+            Assert.Equal("APIKEY", fakeImdbClient.LastApiKey);
+            Assert.Equal("tt123", fakeImdbClient.LastImdbId);
         }
 
+        // ImdbClient.PingAsync returns true on HTTP 200.
         [Fact]
         public async Task ImdbClient_PingAsync_ReturnsTrue_On200()
         {
-            var handler = new FakeHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
-            var http = new HttpClient(handler) { BaseAddress = new Uri("http://imdb/") };
-            var client = new ImdbClient(http);
+            var fakeHandler = new FakeHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
+            var httpClient = new HttpClient(fakeHandler) { BaseAddress = new Uri("http://imdb/") };
+            var imdbClient = new ImdbClient(httpClient);
 
-            var ok = await client.PingAsync();
-            Assert.True(ok);
+            var pingOk = await imdbClient.PingAsync();
+            Assert.True(pingOk);
         }
 
+        // ImdbClient.PingAsync returns false on non-success status code.
         [Fact]
         public async Task ImdbClient_PingAsync_ReturnsFalse_OnNonSuccess()
         {
-            var handler = new FakeHandler(_ => new HttpResponseMessage(HttpStatusCode.InternalServerError));
-            var http = new HttpClient(handler) { BaseAddress = new Uri("http://imdb/") };
-            var client = new ImdbClient(http);
+            var fakeHandler = new FakeHandler(_ => new HttpResponseMessage(HttpStatusCode.InternalServerError));
+            var httpClient = new HttpClient(fakeHandler) { BaseAddress = new Uri("http://imdb/") };
+            var imdbClient = new ImdbClient(httpClient);
 
-            var ok = await client.PingAsync();
-            Assert.False(ok);
+            var pingOk = await imdbClient.PingAsync();
+            Assert.False(pingOk);
         }
 
+        // ImdbClient.PingAsync returns false when HttpClient throws.
         [Fact]
         public async Task ImdbClient_PingAsync_ReturnsFalse_OnException()
         {
-            var handler = new ThrowingHandler();
-            var http = new HttpClient(handler) { BaseAddress = new Uri("http://imdb/") };
-            var client = new ImdbClient(http);
+            var throwingHandler = new ThrowingHandler();
+            var httpClient = new HttpClient(throwingHandler) { BaseAddress = new Uri("http://imdb/") };
+            var imdbClient = new ImdbClient(httpClient);
 
-            var ok = await client.PingAsync();
-            Assert.False(ok);
+            var pingOk = await imdbClient.PingAsync();
+            Assert.False(pingOk);
         }
 
+        // ImdbClient.GetByIdAsync parses JSON payload into ImdbTitleResponse.
         [Fact]
         public async Task ImdbClient_GetByIdAsync_ParsesJson()
         {
             var json = "{\"id\":\"tt123\",\"title\":\"The Film\",\"stars\":\"A,B\",\"releaseDate\":\"2020\"}";
-            var handler = new FakeHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+            var fakeHandler = new FakeHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent(json, Encoding.UTF8, "application/json")
             });
-            var http = new HttpClient(handler) { BaseAddress = new Uri("http://imdb/") };
-            var client = new ImdbClient(http);
+            var httpClient = new HttpClient(fakeHandler) { BaseAddress = new Uri("http://imdb/") };
+            var imdbClient = new ImdbClient(httpClient);
 
-            var model = await client.GetByIdAsync("tt123", "APIKEY");
-            Assert.Equal("tt123", model.id);
-            Assert.Equal("The Film", model.title);
-            Assert.Equal("A,B", model.stars);
-            Assert.Equal("2020", model.releaseDate);
+            var responseModel = await imdbClient.GetByIdAsync("tt123", "APIKEY");
+            Assert.Equal("tt123", responseModel.id);
+            Assert.Equal("The Film", responseModel.title);
+            Assert.Equal("A,B", responseModel.stars);
+            Assert.Equal("2020", responseModel.releaseDate);
         }
 
+        // ImdbClient.GetByIdAsync throws on non-success responses.
         [Fact]
         public async Task ImdbClient_GetByIdAsync_Throws_OnNonSuccess()
         {
-            var handler = new FakeHandler(_ => new HttpResponseMessage(HttpStatusCode.NotFound));
-            var http = new HttpClient(handler) { BaseAddress = new Uri("http://imdb/") };
-            var client = new ImdbClient(http);
+            var fakeHandler = new FakeHandler(_ => new HttpResponseMessage(HttpStatusCode.NotFound));
+            var httpClient = new HttpClient(fakeHandler) { BaseAddress = new Uri("http://imdb/") };
+            var imdbClient = new ImdbClient(httpClient);
 
-            await Assert.ThrowsAsync<HttpRequestException>(() => client.GetByIdAsync("tt404", "APIKEY"));
+            await Assert.ThrowsAsync<HttpRequestException>(() => imdbClient.GetByIdAsync("tt404", "APIKEY"));
         }
 
+        // Smoke test: Program.CreateHostBuilder creates a builder and builds a host.
         [Fact]
         public void Program_CreateHostBuilder_Builds()
         {
-            var builder = Program.CreateHostBuilder(Array.Empty<string>());
-            Assert.NotNull(builder);
-            using var host = builder.Build();
+            var hostBuilder = Program.CreateHostBuilder(Array.Empty<string>());
+            Assert.NotNull(hostBuilder);
+            using var host = hostBuilder.Build();
             Assert.NotNull(host.Services);
         }
 
+        // Ensures Startup.ConfigureServices registers IImdbClient and MVC services.
         [Fact]
         public void Startup_ConfigureServices_RegistersHttpClientAndMvc()
         {
-            var services = new ServiceCollection();
-            var config = new ConfigurationBuilder().Build();
-            var startup = new Startup(config);
+            var serviceCollection = new ServiceCollection();
+            var configuration = new ConfigurationBuilder().Build();
+            var startup = new Startup(configuration);
 
-            startup.ConfigureServices(services);
+            startup.ConfigureServices(serviceCollection);
 
-            var provider = services.BuildServiceProvider();
-            Assert.NotNull(provider.GetService<IImdbClient>());
-            Assert.NotNull(provider.GetService<IActionDescriptorCollectionProvider>());
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+            Assert.NotNull(serviceProvider.GetService<IImdbClient>());
+            Assert.NotNull(serviceProvider.GetService<IActionDescriptorCollectionProvider>());
         }
 
+        // Smoke test: Startup.Configure runs without exception.
         [Fact]
         public void Startup_Configure_DoesNotThrow()
         {
-            var services = new ServiceCollection();
-            var config = new ConfigurationBuilder().Build();
-            var startup = new Startup(config);
-            startup.ConfigureServices(services);
+            var serviceCollection = new ServiceCollection();
+            var configuration = new ConfigurationBuilder().Build();
+            var startup = new Startup(configuration);
+            startup.ConfigureServices(serviceCollection);
 
-            var provider = services.BuildServiceProvider();
-            var app = new ApplicationBuilder(provider);
-            var env = new SimpleWebHostEnvironment { EnvironmentName = Environments.Development };
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+            var appBuilder = new ApplicationBuilder(serviceProvider);
+            var environment = new SimpleWebHostEnvironment { EnvironmentName = Environments.Development };
 
-            var ex = Record.Exception(() => startup.Configure(app, env));
-            Assert.Null(ex);
+            var exception = Record.Exception(() => startup.Configure(appBuilder, environment));
+            Assert.Null(exception);
         }
 
+        // Test double for IImdbClient to control responses and capture parameters.
         private sealed class FakeImdbClient : IImdbClient
         {
             public bool Ping { get; set; }
@@ -177,6 +188,7 @@ namespace CNM.Movies.Tests
             }
         }
 
+        // HttpMessageHandler stub that returns a response using a delegate.
         private sealed class FakeHandler : HttpMessageHandler
         {
             private readonly Func<HttpRequestMessage, HttpResponseMessage> _handler;
@@ -185,12 +197,14 @@ namespace CNM.Movies.Tests
                 => Task.FromResult(_handler(request));
         }
 
+        // HttpMessageHandler that throws to simulate HttpClient errors.
         private sealed class ThrowingHandler : HttpMessageHandler
         {
             protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
                 => throw new HttpRequestException("boom");
         }
 
+        // Minimal IWebHostEnvironment implementation for Startup tests.
         private sealed class SimpleWebHostEnvironment : IWebHostEnvironment
         {
             public string EnvironmentName { get; set; } = Environments.Production;

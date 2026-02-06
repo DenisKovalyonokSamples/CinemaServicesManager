@@ -24,110 +24,114 @@ namespace CNM.Gateway.Tests
 {
     public class GatewayTests
     {
+        // Verifies NotFound is returned when the requested downstream service is not configured.
         [Fact]
         public async Task Proxy_UnknownService_ReturnsNotFound()
         {
-            var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string>()).Build();
-            var controller = new GatewayController(new FakeHttpClientFactory(new HttpClient(new FakeHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)))), config)
+            var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string>()).Build();
+            var gatewayController = new GatewayController(new FakeHttpClientFactory(new HttpClient(new FakeHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)))), configuration)
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
             };
 
-            var result = await controller.Proxy("unknown", "api/test");
+            var actionResult = await gatewayController.Proxy("unknown", "api/test");
 
-            var notFound = Assert.IsType<NotFoundObjectResult>(result);
-            Assert.Contains("Unknown service", notFound.Value?.ToString());
+            var notFoundObjectResult = Assert.IsType<NotFoundObjectResult>(actionResult);
+            Assert.Contains("Unknown service", notFoundObjectResult.Value?.ToString());
         }
 
+        // Ensures GET requests are proxied correctly: headers forwarded, response headers applied, and content returned.
         [Fact]
         public async Task Proxy_ForwardsGetWithHeaders_AndReturnsFileWithResponseHeaders()
         {
             // Arrange config for known service
-            var dict = new Dictionary<string, string> { ["DownstreamServices:movies"] = "http://movies.local" };
-            var config = new ConfigurationBuilder().AddInMemoryCollection(dict).Build();
+            var downstreamConfiguration = new Dictionary<string, string> { ["DownstreamServices:movies"] = "http://movies.local" };
+            var configuration = new ConfigurationBuilder().AddInMemoryCollection(downstreamConfiguration).Build();
 
-            HttpRequestMessage capturedRequest = null;
-            var handler = new FakeHandler(req =>
+            HttpRequestMessage capturedDownstreamRequest = null;
+            var fakeHandler = new FakeHandler(req =>
             {
-                capturedRequest = req;
-                var response = new HttpResponseMessage(HttpStatusCode.OK)
+                capturedDownstreamRequest = req;
+                var downstreamResponse = new HttpResponseMessage(HttpStatusCode.OK)
                 {
                     Content = new ByteArrayContent(Encoding.UTF8.GetBytes("hello"))
                 };
-                response.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/plain");
-                response.Headers.TryAddWithoutValidation("x-downstream", "ok");
-                response.Headers.TryAddWithoutValidation("transfer-encoding", "chunked");
-                return response;
+                downstreamResponse.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/plain");
+                downstreamResponse.Headers.TryAddWithoutValidation("x-downstream", "ok");
+                downstreamResponse.Headers.TryAddWithoutValidation("transfer-encoding", "chunked");
+                return downstreamResponse;
             });
-            var httpClient = new HttpClient(handler);
-            var controller = new GatewayController(new FakeHttpClientFactory(httpClient), config)
+            var httpClient = new HttpClient(fakeHandler);
+            var gatewayController = new GatewayController(new FakeHttpClientFactory(httpClient), configuration)
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
             };
 
             // Add request headers, one general and one content-related to exercise both branches
-            controller.Request.Method = HttpMethods.Get;
-            controller.Request.Headers["x-test"] = "abc";
-            controller.Request.Headers["Content-Language"] = "en-US";
+            gatewayController.Request.Method = HttpMethods.Get;
+            gatewayController.Request.Headers["x-test"] = "abc";
+            gatewayController.Request.Headers["Content-Language"] = "en-US";
 
             // Act
-            var result = await controller.Proxy("movies", "v1/list");
+            var actionResult = await gatewayController.Proxy("movies", "v1/list");
 
             // Assert request forwarding
-            Assert.NotNull(capturedRequest);
-            Assert.Equal(HttpMethod.Get, capturedRequest.Method);
-            Assert.Equal("http://movies.local/v1/list", capturedRequest.RequestUri!.ToString());
-            Assert.True(capturedRequest.Headers.TryGetValues("x-test", out var xVals) && xVals.Contains("abc"));
+            Assert.NotNull(capturedDownstreamRequest);
+            Assert.Equal(HttpMethod.Get, capturedDownstreamRequest.Method);
+            Assert.Equal("http://movies.local/v1/list", capturedDownstreamRequest.RequestUri!.ToString());
+            Assert.True(capturedDownstreamRequest.Headers.TryGetValues("x-test", out var xTestValues) && xTestValues.Contains("abc"));
             // Content-Language should end up in content headers for GET
-            Assert.NotNull(capturedRequest.Content);
-            Assert.True(capturedRequest.Content!.Headers.TryGetValues("Content-Language", out var langs) && langs.Contains("en-US"));
+            Assert.NotNull(capturedDownstreamRequest.Content);
+            Assert.True(capturedDownstreamRequest.Content!.Headers.TryGetValues("Content-Language", out var contentLanguages) && contentLanguages.Contains("en-US"));
 
             // Assert response mapping
-            var file = Assert.IsType<FileContentResult>(result);
-            Assert.Equal("text/plain", file.ContentType);
-            Assert.Equal("ok", controller.Response.Headers["x-downstream"].ToString());
-            Assert.False(controller.Response.Headers.ContainsKey("transfer-encoding"));
-            Assert.Equal("hello", Encoding.UTF8.GetString(file.FileContents));
+            var fileContentResult = Assert.IsType<FileContentResult>(actionResult);
+            Assert.Equal("text/plain", fileContentResult.ContentType);
+            Assert.Equal("ok", gatewayController.Response.Headers["x-downstream"].ToString());
+            Assert.False(gatewayController.Response.Headers.ContainsKey("transfer-encoding"));
+            Assert.Equal("hello", Encoding.UTF8.GetString(fileContentResult.FileContents));
         }
 
+        // Confirms POST/PUT/PATCH bodies and content type are forwarded to downstream.
         [Theory]
         [InlineData("POST")]
         [InlineData("PUT")]
         [InlineData("PATCH")]
         public async Task Proxy_ForwardsBodyAndContentType_ForMethodsWithBody(string method)
         {
-            var dict = new Dictionary<string, string> { ["DownstreamServices:showtimes"] = "http://showtimes.local" };
-            var config = new ConfigurationBuilder().AddInMemoryCollection(dict).Build();
+            var downstreamConfiguration = new Dictionary<string, string> { ["DownstreamServices:showtimes"] = "http://showtimes.local" };
+            var configuration = new ConfigurationBuilder().AddInMemoryCollection(downstreamConfiguration).Build();
 
-            HttpRequestMessage capturedRequest = null;
-            var handler = new FakeHandler(req =>
+            HttpRequestMessage capturedDownstreamRequest = null;
+            var fakeHandler = new FakeHandler(req =>
             {
-                capturedRequest = req;
+                capturedDownstreamRequest = req;
                 return new HttpResponseMessage(HttpStatusCode.OK)
                 {
                     Content = new ByteArrayContent(Array.Empty<byte>())
                 };
             });
-            var controller = new GatewayController(new FakeHttpClientFactory(new HttpClient(handler)), config)
+            var gatewayController = new GatewayController(new FakeHttpClientFactory(new HttpClient(fakeHandler)), configuration)
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
             };
 
-            controller.Request.Method = method;
-            var bodyBytes = Encoding.UTF8.GetBytes("{\"a\":1}");
-            controller.Request.Body = new MemoryStream(bodyBytes);
-            controller.Request.ContentType = "application/json";
+            gatewayController.Request.Method = method;
+            var requestBodyBytes = Encoding.UTF8.GetBytes("{\"a\":1}");
+            gatewayController.Request.Body = new MemoryStream(requestBodyBytes);
+            gatewayController.Request.ContentType = "application/json";
 
-            var result = await controller.Proxy("showtimes", "v2/create");
+            var actionResult = await gatewayController.Proxy("showtimes", "v2/create");
 
-            Assert.NotNull(capturedRequest);
-            Assert.NotNull(capturedRequest.Content);
-            Assert.Equal("application/json", capturedRequest.Content!.Headers.ContentType!.MediaType);
-            var forwardedBody = await capturedRequest.Content.ReadAsStringAsync();
-            Assert.Equal("{\"a\":1}", forwardedBody);
-            Assert.IsType<FileContentResult>(result);
+            Assert.NotNull(capturedDownstreamRequest);
+            Assert.NotNull(capturedDownstreamRequest.Content);
+            Assert.Equal("application/json", capturedDownstreamRequest.Content!.Headers.ContentType!.MediaType);
+            var forwardedRequestBody = await capturedDownstreamRequest.Content.ReadAsStringAsync();
+            Assert.Equal("{\"a\":1}", forwardedRequestBody);
+            Assert.IsType<FileContentResult>(actionResult);
         }
 
+        // Smoke test that the web host builder is created and can build a host.
         [Fact]
         public void Program_CreateHostBuilder_Builds()
         {
@@ -137,36 +141,39 @@ namespace CNM.Gateway.Tests
             Assert.NotNull(host.Services);
         }
 
+        // Ensures Startup.ConfigureServices registers HttpClient factory and MVC.
         [Fact]
         public void Startup_ConfigureServices_RegistersHttpClientAndMvc()
         {
-            var services = new ServiceCollection();
-            var config = new ConfigurationBuilder().Build();
-            var startup = new Startup(config);
+            var serviceCollection = new ServiceCollection();
+            var configuration = new ConfigurationBuilder().Build();
+            var startup = new Startup(configuration);
 
-            startup.ConfigureServices(services);
+            startup.ConfigureServices(serviceCollection);
 
-            var provider = services.BuildServiceProvider();
-            Assert.NotNull(provider.GetService<IHttpClientFactory>());
-            Assert.NotNull(provider.GetService<IActionDescriptorCollectionProvider>());
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+            Assert.NotNull(serviceProvider.GetService<IHttpClientFactory>());
+            Assert.NotNull(serviceProvider.GetService<IActionDescriptorCollectionProvider>());
         }
 
+        // Smoke test that Startup.Configure runs without throwing.
         [Fact]
         public void Startup_Configure_DoesNotThrow()
         {
-            var services = new ServiceCollection();
-            var config = new ConfigurationBuilder().Build();
-            var startup = new Startup(config);
-            startup.ConfigureServices(services);
+            var serviceCollection = new ServiceCollection();
+            var configuration = new ConfigurationBuilder().Build();
+            var startup = new Startup(configuration);
+            startup.ConfigureServices(serviceCollection);
 
-            var provider = services.BuildServiceProvider();
-            var app = new ApplicationBuilder(provider);
-            var env = new SimpleWebHostEnvironment { EnvironmentName = Environments.Development };
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+            var appBuilder = new ApplicationBuilder(serviceProvider);
+            var environment = new SimpleWebHostEnvironment { EnvironmentName = Environments.Development };
 
-            var ex = Record.Exception(() => startup.Configure(app, env));
-            Assert.Null(ex);
+            var exception = Record.Exception(() => startup.Configure(appBuilder, environment));
+            Assert.Null(exception);
         }
 
+        // Minimal IHttpClientFactory implementation returning a provided HttpClient.
         private sealed class FakeHttpClientFactory : IHttpClientFactory
         {
             private readonly HttpClient _client;
@@ -174,6 +181,7 @@ namespace CNM.Gateway.Tests
             public HttpClient CreateClient(string name = null) => _client;
         }
 
+        // HttpMessageHandler stub that returns a response from a provided delegate.
         private sealed class FakeHandler : HttpMessageHandler
         {
             private readonly Func<HttpRequestMessage, HttpResponseMessage> _handler;
@@ -182,6 +190,7 @@ namespace CNM.Gateway.Tests
                 => Task.FromResult(_handler(request));
         }
 
+        // Simple IWebHostEnvironment for testing Startup.Configure.
         private sealed class SimpleWebHostEnvironment : IWebHostEnvironment
         {
             public string EnvironmentName { get; set; } = Environments.Production;
