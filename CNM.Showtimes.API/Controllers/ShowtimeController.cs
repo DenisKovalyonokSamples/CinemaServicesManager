@@ -35,7 +35,11 @@ namespace CNM.Showtimes.API.Controllers
                 }
                 if (!string.IsNullOrWhiteSpace(title))
                 {
-                    data = data.Where(x => x.Movie != null && x.Movie.Title.Contains(title));
+                    var term = title.Trim();
+                    data = data.Where(x =>
+                        x.Movie != null &&
+                        x.Movie.Title != null &&
+                        x.Movie.Title.Contains(term, StringComparison.OrdinalIgnoreCase));
                 }
                 return data.Any();
             });
@@ -48,10 +52,14 @@ namespace CNM.Showtimes.API.Controllers
         {
             if (payload?.Movie == null || string.IsNullOrWhiteSpace(payload.Movie.ImdbId))
                 return BadRequest("movie.imdb_id required");
+            if (string.IsNullOrWhiteSpace(imdbApiKey))
+                return BadRequest("imdb_api_key required");
+
             var imdb = await _imdb.GetByIdAsync(payload.Movie.ImdbId, imdbApiKey);
-            payload.Movie.Title = imdb?.title;
-            payload.Movie.Stars = imdb?.stars;
+            payload.Movie.Title = imdb?.title ?? payload.Movie.Title;
+            payload.Movie.Stars = imdb?.stars ?? payload.Movie.Stars;
             if (DateTime.TryParse(imdb?.releaseDate, out var rd)) payload.Movie.ReleaseDate = rd;
+
             var created = _repo.Add(payload);
             return Created($"/showtime/{created.Id}", created);
         }
@@ -60,11 +68,11 @@ namespace CNM.Showtimes.API.Controllers
         [Authorize(Policy = "Write")]
         public async Task<IActionResult> Put([FromBody] DomainEntities.ShowtimeEntity payload, [FromQuery] string imdbApiKey)
         {
-            if (payload.Movie != null && !string.IsNullOrWhiteSpace(payload.Movie.ImdbId))
+            if (payload?.Movie != null && !string.IsNullOrWhiteSpace(payload.Movie.ImdbId) && !string.IsNullOrWhiteSpace(imdbApiKey))
             {
                 var imdb = await _imdb.GetByIdAsync(payload.Movie.ImdbId, imdbApiKey);
-                payload.Movie.Title = imdb?.title;
-                payload.Movie.Stars = imdb?.stars;
+                payload.Movie.Title = imdb?.title ?? payload.Movie.Title;
+                payload.Movie.Stars = imdb?.stars ?? payload.Movie.Stars;
                 if (DateTime.TryParse(imdb?.releaseDate, out var rd)) payload.Movie.ReleaseDate = rd;
             }
             var updated = _repo.Update(payload);
