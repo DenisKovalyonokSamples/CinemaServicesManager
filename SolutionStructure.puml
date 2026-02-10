@@ -15,18 +15,22 @@ package "CNM.Domain" {
   }
   package "Interfaces" {
     interface IShowtimesRepository
+    interface IImdbClient
   }
   package "Repositories" {
     class ShowtimesRepository
   }
+  package "Clients" {
+    class ImdbClient
+  }
 }
 
 package "CNM.Showtimes.API" {
-  class ShowtimesStartup
-  class ShowtimeController
-  package "Services" {
-    interface IImdbClient
-    class ImdbClient
+    class ShowtimesStartup
+    class ShowtimeController
+    package "Services" {
+    class ImdbStatusBackgroundService
+    class CustomAuthenticationTokenService
   }
 }
 
@@ -60,6 +64,10 @@ package "CNM.Gateway.Tests" {
   class GatewayTests
 }
 
+package "CNM.Gateway.Tests" {
+  class GatewayTests
+}
+
 ShowtimeController --> IImdbClient : uses
 ShowtimeController --> IShowtimesRepository : uses (Domain.Interfaces)
 ShowtimesRepository --> DatabaseContext : uses
@@ -67,9 +75,14 @@ ShowtimesRepository --> ShowtimeEntity : operates on
 ShowtimesRepository --> MovieEntity : operates on
 ShowtimesRepository --> AuditoriumEntity : operates on
 IShowtimesRepository <|.. ShowtimesRepository : implements
+ImdbStatusBackgroundService --> IImdbClient : uses
+
+MoviesController --> IImdbClient : uses
+MoviesStartup ..> MoviesController : DI registers
+MoviesStartup ..> ImdbClient : DI registers (Domain.Clients)
 
 ShowtimesStartup ..> ShowtimeController : DI registers
-ShowtimesStartup ..> ImdbClient : DI registers
+ShowtimesStartup ..> ImdbClient : DI registers (Domain.Clients)
 ShowtimesStartup ..> ShowtimesRepository : DI registers
 ShowtimesStartup ..> IShowtimesRepository : binds
 
@@ -87,6 +100,7 @@ MoviesTests ..> MoviesStartup
 
 GatewayTests ..> GatewayController
 GatewayTests ..> GatewayStartup
+GatewayStartup ..> GatewayController : DI registers
 
 note bottom of DatabaseContext
 EF Core InMemory in dev/test
