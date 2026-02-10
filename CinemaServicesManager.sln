@@ -24,6 +24,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CNM.Application.Tests", "CN
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CNM.Domain", "CNM.Domain\CNM.Domain.csproj", "{71086F77-0077-4B4C-9202-03AB8C9BD3B5}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionItems", "{5A6430FB-E62D-40C8-8301-8B47D221945F}"
+	ProjectSection(SolutionItems) = preProject
+		Details.txt = Details.txt
+		docker-compose.yml = docker-compose.yml
+		README.md = README.md
+		SolutionStructure.puml = SolutionStructure.puml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
