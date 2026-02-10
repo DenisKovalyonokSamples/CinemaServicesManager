@@ -32,6 +32,7 @@ package "CNM.Showtimes.API" {
 
 package "CNM.Movies.API" {
   class MoviesStartup
+  class MoviesController
 }
 
 package "CNM.Gateway.API" {
@@ -81,9 +82,11 @@ ApplicationTests ..> MovieEntity
 ShowtimesTests ..> ShowtimesStartup
 ShowtimesTests ..> ShowtimeController
 
+MoviesTests ..> MoviesController
 MoviesTests ..> MoviesStartup
 
 GatewayTests ..> GatewayController
+GatewayTests ..> GatewayStartup
 
 note bottom of DatabaseContext
 EF Core InMemory in dev/test
