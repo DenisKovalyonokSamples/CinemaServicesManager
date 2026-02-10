@@ -23,6 +23,9 @@ package "CNM.Domain" {
   package "Clients" {
     class ImdbClient
   }
+  package "Models" {
+    class ImdbTitleResponse
+  }
 }
 
 package "CNM.Showtimes.API" {
@@ -67,6 +70,10 @@ package "CNM.Gateway.Tests" {
 package "CNM.Gateway.Tests" {
   class GatewayTests
 }
+
+ImdbClient --> ImdbTitleResponse : uses
+IImdbClient <|.. ImdbClient : implements
+MoviesTests --> ImdbTitleResponse : uses
 
 ShowtimeController --> IImdbClient : uses
 ShowtimeController --> IShowtimesRepository : uses (Domain.Interfaces)
