@@ -45,7 +45,7 @@ namespace CNM.Application.Tests
             var serviceProvider = serviceCollection.BuildServiceProvider();
 
             Assert.NotNull(serviceProvider.GetService<IShowtimesRepository>());
-            Assert.NotNull(serviceProvider.GetService<CinemaContext>());
+            Assert.NotNull(serviceProvider.GetService<DatabaseContext>());
             Assert.NotNull(serviceProvider.GetService<IActionDescriptorCollectionProvider>());
             Assert.NotNull(serviceProvider.GetService<Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckService>());
         }
@@ -62,7 +62,7 @@ namespace CNM.Application.Tests
             // Add minimal services used in Configure
             serviceCollection.AddRouting();
             serviceCollection.AddControllers();
-            serviceCollection.AddDbContext<CinemaContext>(opts => opts.UseInMemoryDatabase("test"));
+            serviceCollection.AddDbContext<DatabaseContext>(opts => opts.UseInMemoryDatabase("test"));
             serviceCollection.AddTransient<IShowtimesRepository, ShowtimesRepository>();
             var serviceProvider = serviceCollection.BuildServiceProvider();
             var appBuilder = new ApplicationBuilder(serviceProvider);
@@ -77,8 +77,8 @@ namespace CNM.Application.Tests
         [Fact]
         public void ShowtimesRepository_Add_Update_Delete_AndQueries_Work()
         {
-            var options = new DbContextOptionsBuilder<CinemaContext>().UseInMemoryDatabase("repo").Options;
-            using var dbContext = new CinemaContext(options);
+            var options = new DbContextOptionsBuilder<DatabaseContext>().UseInMemoryDatabase("repo").Options;
+            using var dbContext = new DatabaseContext(options);
             var repository = new ShowtimesRepository(dbContext);
 
             // Add

@@ -23,7 +23,7 @@ namespace CNM.Application
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddDbContext<DomainDb.CinemaContext>((sp, options) =>
+            services.AddDbContext<DomainDb.DatabaseContext>((sp, options) =>
             {
                 var env = sp.GetRequiredService<IWebHostEnvironment>();
                 options.UseInMemoryDatabase("CinemaDb")

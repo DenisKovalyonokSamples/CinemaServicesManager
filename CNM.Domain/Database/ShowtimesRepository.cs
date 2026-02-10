@@ -8,8 +8,8 @@ namespace CNM.Domain.Database
 {
     public class ShowtimesRepository : IShowtimesRepository
     {
-        private readonly CinemaContext _context;
-        public ShowtimesRepository(CinemaContext context)
+        private readonly DatabaseContext _context;
+        public ShowtimesRepository(DatabaseContext context)
         {
             _context = context;
         }

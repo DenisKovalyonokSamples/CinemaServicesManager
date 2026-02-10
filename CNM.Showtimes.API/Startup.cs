@@ -25,7 +25,7 @@ namespace CNM.Showtimes.API
         public void ConfigureServices(IServiceCollection services)
         {
             // Consolidated single DbContext registration
-            services.AddDbContext<CNM.Domain.Database.CinemaContext>(options =>
+            services.AddDbContext<CNM.Domain.Database.DatabaseContext>(options =>
             {
                 options.UseInMemoryDatabase("CinemaDb")
                     .EnableSensitiveDataLogging()

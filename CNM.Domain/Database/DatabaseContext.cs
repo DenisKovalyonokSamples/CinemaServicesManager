@@ -5,9 +5,9 @@ using System.Linq;
 
 namespace CNM.Domain.Database
 {
-    public class CinemaContext : DbContext
+    public class DatabaseContext : DbContext
     {
-        public CinemaContext(DbContextOptions<CinemaContext> options) : base(options) {}
+        public DatabaseContext(DbContextOptions<DatabaseContext> options) : base(options) {}
 
         public DbSet<AuditoriumEntity> Auditoriums { get; set; }
         public DbSet<ShowtimeEntity> Showtimes { get; set; }
