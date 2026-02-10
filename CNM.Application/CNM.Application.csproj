@@ -26,7 +26,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CNM.Domain\CNM.Domain.csproj" />
-    <ProjectReference Include="..\CNM.Showtimes.API\CNM.Showtimes.API.csproj" />
   </ItemGroup>
 
 

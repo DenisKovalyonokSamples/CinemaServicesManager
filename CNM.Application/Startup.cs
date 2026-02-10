@@ -1,4 +1,7 @@
+
 using DomainDb = CNM.Domain.Database;
+using Interfaces = CNM.Domain.Interfaces;
+using Repositories = CNM.Domain.Repositories;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -33,7 +36,7 @@ namespace CNM.Application
                     options.EnableSensitiveDataLogging();
                 }
             });
-            services.AddTransient<DomainDb.IShowtimesRepository, DomainDb.ShowtimesRepository>();
+            services.AddTransient<Interfaces.IShowtimesRepository, Repositories.ShowtimesRepository>();
             services.AddAuthorization();
             services.AddControllers()
                 .AddNewtonsoftJson(opts =>

@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CNM.Application\CNM.Application.csproj" />
+    <ProjectReference Include="..\CNM.Showtimes.API\CNM.Showtimes.API.csproj" />
   </ItemGroup>
 
 </Project>

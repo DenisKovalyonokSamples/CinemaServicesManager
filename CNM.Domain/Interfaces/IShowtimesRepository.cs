@@ -1,9 +1,9 @@
-using CNM.Domain.Database.Entities;
+﻿using CNM.Domain.Database.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace CNM.Domain.Database
+namespace CNM.Domain.Interfaces
 {
     public interface IShowtimesRepository
     {

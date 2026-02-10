@@ -1,5 +1,6 @@
 using CNM.Domain.Database; // keep this for DI registration
-using DomainDb = CNM.Domain.Database;
+using CNM.Domain.Repositories;
+using DomainDb = CNM.Domain.Interfaces;
 using DomainEntities = CNM.Domain.Database.Entities;
 using CNM.Showtimes.API.Services;
 using Microsoft.AspNetCore.Authorization;

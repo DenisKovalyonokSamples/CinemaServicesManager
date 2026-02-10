@@ -1,10 +1,11 @@
+﻿using CNM.Domain.Database;
 using CNM.Domain.Database.Entities;
+using CNM.Domain.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.EntityFrameworkCore;
 
-namespace CNM.Domain.Database
+namespace CNM.Domain.Repositories
 {
     public class ShowtimesRepository : IShowtimesRepository
     {

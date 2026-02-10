@@ -1,5 +1,7 @@
 using CNM.Showtimes.API.Auth;
-using CNM.Domain.Database;
+using DomainDb = CNM.Domain.Database;
+using Interfaces = CNM.Domain.Interfaces;
+using Repositories = CNM.Domain.Repositories;
 using CNM.Showtimes.API.Middleware;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -25,13 +27,13 @@ namespace CNM.Showtimes.API
         public void ConfigureServices(IServiceCollection services)
         {
             // Consolidated single DbContext registration
-            services.AddDbContext<CNM.Domain.Database.DatabaseContext>(options =>
+            services.AddDbContext<DomainDb.DatabaseContext>(options =>
             {
                 options.UseInMemoryDatabase("CinemaDb")
                     .EnableSensitiveDataLogging()
                     .ConfigureWarnings(b => b.Ignore(InMemoryEventId.TransactionIgnoredWarning));
             });
-            services.AddScoped<CNM.Domain.Database.IShowtimesRepository, CNM.Domain.Database.ShowtimesRepository>();
+            services.AddScoped<Interfaces.IShowtimesRepository, Repositories.ShowtimesRepository>();
             services.AddSingleton<ICustomAuthenticationTokenService, CustomAuthenticationTokenService>();
             services.AddSingleton<Services.ImdbStatusSingleton>();
             services.AddHttpClient<Services.IImdbClient, Services.ImdbClient>();
