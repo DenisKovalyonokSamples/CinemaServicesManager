@@ -1,0 +1,79 @@
+@startuml
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+title CinemaServicesManager Solution Structure
+
+package "CNM.Domain" {
+  package "Database" {
+    class CinemaContext
+    interface IShowtimesRepository
+    class ShowtimesRepository
+    package "Entities" {
+      class ShowtimeEntity
+      class MovieEntity
+      class AuditoriumEntity
+    }
+  }
+}
+
+package "CNM.Showtimes.API" {
+  class ShowtimesStartup
+  class ShowtimeController
+  package "Services" {
+    interface IImdbClient
+    class ImdbClient
+  }
+}
+
+package "CNM.Movies.API" {
+  class MoviesStartup
+}
+
+package "CNM.Gateway.API" {
+  class GatewayStartup
+}
+
+package "CNM.Application" {
+  class ApplicationStartup
+}
+
+package "CNM.Application.Tests" {
+  class ApplicationTests
+}
+
+package "CNM.Showtimes.Tests" {
+  class ShowtimesTests
+}
+
+package "CNM.Movies.Tests" {
+  class MoviesTests
+}
+
+ShowtimeController --> IImdbClient : uses
+ShowtimeController --> IShowtimesRepository : uses
+ShowtimesRepository --> CinemaContext : uses
+ShowtimesRepository --> ShowtimeEntity : operates on
+ShowtimesRepository --> MovieEntity : operates on
+ShowtimesRepository --> AuditoriumEntity : operates on
+
+ShowtimesStartup ..> ShowtimeController : DI registers
+ShowtimesStartup ..> ImdbClient : DI registers
+ShowtimesStartup ..> ShowtimesRepository : DI registers
+
+ApplicationTests ..> ApplicationStartup
+ApplicationTests ..> CinemaContext
+ApplicationTests ..> IShowtimesRepository
+ApplicationTests ..> ShowtimeEntity
+ApplicationTests ..> MovieEntity
+
+ShowtimesTests ..> ShowtimesStartup
+ShowtimesTests ..> ShowtimeController
+
+MoviesTests ..> MoviesStartup
+
+note right of CinemaContext
+EF Core InMemory in dev/test
+end note
+
+@enduml

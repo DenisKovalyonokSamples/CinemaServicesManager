@@ -1,4 +1,4 @@
-using CNM.Showtimes.API.Database; // keep this for DI registration
+using CNM.Domain.Database; // keep this for DI registration
 using DomainDb = CNM.Domain.Database;
 using DomainEntities = CNM.Domain.Database.Entities;
 using CNM.Showtimes.API.Services;
