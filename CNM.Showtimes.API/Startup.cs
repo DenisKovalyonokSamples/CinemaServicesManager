@@ -1,6 +1,5 @@
 using CNM.Showtimes.API.Auth;
 using DomainDb = CNM.Domain.Database;
-using Interfaces = CNM.Domain.Interfaces;
 using Repositories = CNM.Domain.Repositories;
 using CNM.Showtimes.API.Middleware;
 using Microsoft.AspNetCore.Builder;
@@ -11,6 +10,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
+using CNM.Domain.Interfaces;
+using CNM.Domain.Clients;
 
 namespace CNM.Showtimes.API
 {
@@ -33,10 +34,10 @@ namespace CNM.Showtimes.API
                     .EnableSensitiveDataLogging()
                     .ConfigureWarnings(b => b.Ignore(InMemoryEventId.TransactionIgnoredWarning));
             });
-            services.AddScoped<Interfaces.IShowtimesRepository, Repositories.ShowtimesRepository>();
+            services.AddScoped<IShowtimesRepository, Repositories.ShowtimesRepository>();
             services.AddSingleton<ICustomAuthenticationTokenService, CustomAuthenticationTokenService>();
             services.AddSingleton<Services.ImdbStatusSingleton>();
-            services.AddHttpClient<Services.IImdbClient, Services.ImdbClient>();
+            services.AddHttpClient<IImdbClient, ImdbClient>();
             services.AddHostedService<Services.ImdbStatusBackgroundService>();
             services.AddAuthentication(options =>
             {

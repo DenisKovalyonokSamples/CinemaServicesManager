@@ -1,4 +1,4 @@
-namespace CNM.Movies.API.Services
+﻿namespace CNM.Domain.Models
 {
     public class ImdbTitleResponse
     {

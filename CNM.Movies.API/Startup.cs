@@ -1,3 +1,5 @@
+using CNM.Domain.Clients;
+using CNM.Domain.Interfaces;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -18,7 +20,7 @@ namespace CNM.Movies.API
 
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddHttpClient<CNM.Movies.API.Services.IImdbClient, CNM.Movies.API.Services.ImdbClient>(client =>
+            services.AddHttpClient<IImdbClient, ImdbClient>(client =>
             {
                 var baseUrl = Configuration["Imdb:BaseUrl"] ?? "https://imdb-api.com";
                 client.BaseAddress = new System.Uri(baseUrl.TrimEnd('/') + "/");

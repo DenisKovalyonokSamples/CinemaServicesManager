@@ -1,6 +1,6 @@
+using CNM.Domain.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
-using CNM.Movies.API.Services;
 
 namespace CNM.Movies.API.Controllers
 {

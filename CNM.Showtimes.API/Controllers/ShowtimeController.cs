@@ -2,12 +2,12 @@ using CNM.Domain.Database; // keep this for DI registration
 using CNM.Domain.Repositories;
 using DomainDb = CNM.Domain.Interfaces;
 using DomainEntities = CNM.Domain.Database.Entities;
-using CNM.Showtimes.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using CNM.Domain.Interfaces;
 
 namespace CNM.Showtimes.API.Controllers
 {

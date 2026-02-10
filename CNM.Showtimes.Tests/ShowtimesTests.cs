@@ -26,6 +26,8 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Xunit;
+using CNM.Domain.Interfaces;
+using CNM.Domain.Models;
 
 namespace CNM.Showtimes.Tests
 {

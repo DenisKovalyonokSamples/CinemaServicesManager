@@ -1,22 +1,21 @@
+﻿using CNM.Domain.Interfaces;
+using CNM.Domain.Models;
 using System;
+using System.Collections.Generic;
 using System.Net.Http;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace CNM.Movies.API.Services
+namespace CNM.Domain.Clients
 {
-    public interface IImdbClient
-    {
-        Task<bool> PingAsync();
-        Task<ImdbTitleResponse> GetByIdAsync(string imdbId, string apiKey);
-    }
-
     public class ImdbClient : IImdbClient
     {
         private readonly HttpClient _http;
         public ImdbClient(HttpClient http)
         {
             _http = http;
+            _http.BaseAddress = new Uri("https://imdb-api.com/");
         }
 
         public async Task<bool> PingAsync()
