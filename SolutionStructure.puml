@@ -36,6 +36,7 @@ package "CNM.Movies.API" {
 
 package "CNM.Gateway.API" {
   class GatewayStartup
+  class GatewayController
 }
 
 package "CNM.Application" {
@@ -52,6 +53,10 @@ package "CNM.Showtimes.Tests" {
 
 package "CNM.Movies.Tests" {
   class MoviesTests
+}
+
+package "CNM.Gateway.Tests" {
+  class GatewayTests
 }
 
 ShowtimeController --> IImdbClient : uses
@@ -77,6 +82,8 @@ ShowtimesTests ..> ShowtimesStartup
 ShowtimesTests ..> ShowtimeController
 
 MoviesTests ..> MoviesStartup
+
+GatewayTests ..> GatewayController
 
 note bottom of DatabaseContext
 EF Core InMemory in dev/test
