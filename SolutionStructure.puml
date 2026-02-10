@@ -6,14 +6,18 @@ title CinemaServicesManager Solution Structure
 
 package "CNM.Domain" {
   package "Database" {
-    class CinemaContext
-    interface IShowtimesRepository
-    class ShowtimesRepository
+    class DatabaseContext
     package "Entities" {
       class ShowtimeEntity
       class MovieEntity
       class AuditoriumEntity
     }
+  }
+  package "Interfaces" {
+    interface IShowtimesRepository
+  }
+  package "Repositories" {
+    class ShowtimesRepository
   }
 }
 
@@ -51,18 +55,20 @@ package "CNM.Movies.Tests" {
 }
 
 ShowtimeController --> IImdbClient : uses
-ShowtimeController --> IShowtimesRepository : uses
-ShowtimesRepository --> CinemaContext : uses
+ShowtimeController --> IShowtimesRepository : uses (Domain.Interfaces)
+ShowtimesRepository --> DatabaseContext : uses
 ShowtimesRepository --> ShowtimeEntity : operates on
 ShowtimesRepository --> MovieEntity : operates on
 ShowtimesRepository --> AuditoriumEntity : operates on
+IShowtimesRepository <|.. ShowtimesRepository : implements
 
 ShowtimesStartup ..> ShowtimeController : DI registers
 ShowtimesStartup ..> ImdbClient : DI registers
 ShowtimesStartup ..> ShowtimesRepository : DI registers
+ShowtimesStartup ..> IShowtimesRepository : binds
 
 ApplicationTests ..> ApplicationStartup
-ApplicationTests ..> CinemaContext
+ApplicationTests ..> DatabaseContext
 ApplicationTests ..> IShowtimesRepository
 ApplicationTests ..> ShowtimeEntity
 ApplicationTests ..> MovieEntity
@@ -72,7 +78,7 @@ ShowtimesTests ..> ShowtimeController
 
 MoviesTests ..> MoviesStartup
 
-note right of CinemaContext
+note bottom of DatabaseContext
 EF Core InMemory in dev/test
 end note
 
