@@ -6,6 +6,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using CNM.Application.Middleware;
 using CNM.Application.Auth;
+using CNM.Domain.Clients;
 
 namespace CNM.Gateway.API
 {
@@ -21,7 +22,7 @@ namespace CNM.Gateway.API
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddSingleton<ICustomAuthenticationTokenService, CustomAuthenticationTokenService>();
-            services.AddHttpClient();
+            services.AddDomainServices(Configuration);
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {

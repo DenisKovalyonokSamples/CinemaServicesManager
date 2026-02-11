@@ -38,7 +38,7 @@ namespace CNM.Showtimes.API
             services.AddScoped<IShowtimesRepository, Repositories.ShowtimesRepository>();
             services.AddSingleton<ICustomAuthenticationTokenService, CustomAuthenticationTokenService>();
             services.AddSingleton<Services.ImdbStatusSingleton>();
-            services.AddHttpClient<IImdbClient, ImdbClient>();
+            services.AddDomainServices(Configuration);
             services.AddHostedService<Services.ImdbStatusBackgroundService>();
             services.AddAuthentication(options =>
             {

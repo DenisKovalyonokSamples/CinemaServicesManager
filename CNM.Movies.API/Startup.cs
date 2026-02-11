@@ -23,11 +23,7 @@ namespace CNM.Movies.API
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddSingleton<ICustomAuthenticationTokenService, CustomAuthenticationTokenService>();
-            services.AddHttpClient<IImdbClient, ImdbClient>(client =>
-            {
-                var baseUrl = Configuration["Imdb:BaseUrl"] ?? "https://imdb-api.com";
-                client.BaseAddress = new System.Uri(baseUrl.TrimEnd('/') + "/");
-            });
+            services.AddDomainServices(Configuration);
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
