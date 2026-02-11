@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
+using CNM.Application.Auth;
 
 namespace CNM.Showtimes.API.Auth
 {

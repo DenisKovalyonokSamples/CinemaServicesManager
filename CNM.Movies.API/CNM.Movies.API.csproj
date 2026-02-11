@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CNM.Domain\CNM.Domain.csproj" />
+    <ProjectReference Include="..\CNM.Application\CNM.Application.csproj" />
   </ItemGroup>
 
 </Project>

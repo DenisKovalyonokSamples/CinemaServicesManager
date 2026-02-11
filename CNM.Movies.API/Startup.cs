@@ -6,6 +6,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
+using CNM.Application.Middleware;
+using CNM.Application.Auth;
 
 namespace CNM.Movies.API
 {
@@ -20,6 +22,7 @@ namespace CNM.Movies.API
 
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddSingleton<ICustomAuthenticationTokenService, CustomAuthenticationTokenService>();
             services.AddHttpClient<IImdbClient, ImdbClient>(client =>
             {
                 var baseUrl = Configuration["Imdb:BaseUrl"] ?? "https://imdb-api.com";
@@ -47,6 +50,8 @@ namespace CNM.Movies.API
             app.UseHttpsRedirection();
 
             app.UseRouting();
+            app.UseMiddleware<ErrorHandlingMiddleware>();
+            app.UseMiddleware<RequestTimingMiddleware>();
 
             app.UseEndpoints(endpoints =>
             {

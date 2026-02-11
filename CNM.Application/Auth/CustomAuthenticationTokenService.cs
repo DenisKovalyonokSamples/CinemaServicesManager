@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Security.Claims;
 
-namespace CNM.Showtimes.API.Auth
+namespace CNM.Application.Auth
 {
     public class CustomAuthenticationTokenService : ICustomAuthenticationTokenService
     {

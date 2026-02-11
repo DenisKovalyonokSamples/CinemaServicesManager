@@ -4,6 +4,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
+using CNM.Application.Middleware;
+using CNM.Application.Auth;
 
 namespace CNM.Gateway.API
 {
@@ -18,6 +20,7 @@ namespace CNM.Gateway.API
 
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddSingleton<ICustomAuthenticationTokenService, CustomAuthenticationTokenService>();
             services.AddHttpClient();
             services.AddControllers();
             services.AddSwaggerGen(c =>
@@ -41,6 +44,8 @@ namespace CNM.Gateway.API
             app.UseHttpsRedirection();
 
             app.UseRouting();
+            app.UseMiddleware<ErrorHandlingMiddleware>();
+            app.UseMiddleware<RequestTimingMiddleware>();
 
             app.UseEndpoints(endpoints =>
             {

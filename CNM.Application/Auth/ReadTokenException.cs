@@ -1,6 +1,6 @@
 using System;
 
-namespace CNM.Showtimes.API.Auth
+namespace CNM.Application.Auth
 {
     public class ReadTokenException : Exception
     {

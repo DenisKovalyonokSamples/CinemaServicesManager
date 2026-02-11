@@ -1,7 +1,8 @@
-using CNM.Showtimes.API.Auth;
+using CNM.Application.Auth;
 using DomainDb = CNM.Domain.Database;
 using Repositories = CNM.Domain.Repositories;
-using CNM.Showtimes.API.Middleware;
+using CNM.Application.Middleware;
+using CNM.Showtimes.API.Auth;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;

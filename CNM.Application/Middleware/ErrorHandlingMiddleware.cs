@@ -4,7 +4,7 @@ using System;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace CNM.Showtimes.API.Middleware
+namespace CNM.Application.Middleware
 {
     public class ErrorHandlingMiddleware
     {

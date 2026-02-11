@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using CNM.Domain.Database;
 using CNM.Domain.Interfaces;
 using CNM.Domain.Repositories;
-using Middleware = CNM.Showtimes.API.Middleware;
+using Middleware = CNM.Application.Middleware;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
