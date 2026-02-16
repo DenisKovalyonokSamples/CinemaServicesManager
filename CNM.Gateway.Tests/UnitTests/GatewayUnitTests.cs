@@ -20,9 +20,10 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Xunit;
 
-namespace CNM.Gateway.Tests
+namespace CNM.Gateway.Tests.UnitTests
 {
-    public class GatewayTests
+    // Unit tests for gateway controller proxy behavior and startup wiring
+    public class GatewayUnitTests
     {
         // Verifies NotFound is returned when the requested downstream service is not configured.
         [Fact]
@@ -194,7 +195,7 @@ namespace CNM.Gateway.Tests
         private sealed class SimpleWebHostEnvironment : IWebHostEnvironment
         {
             public string EnvironmentName { get; set; } = Environments.Production;
-            public string ApplicationName { get; set; } = typeof(GatewayTests).Assembly.GetName().Name;
+            public string ApplicationName { get; set; } = typeof(GatewayUnitTests).Assembly.GetName().Name;
             public string WebRootPath { get; set; }
             public IFileProvider WebRootFileProvider { get; set; } = new NullFileProvider();
             public string ContentRootPath { get; set; } = Directory.GetCurrentDirectory();

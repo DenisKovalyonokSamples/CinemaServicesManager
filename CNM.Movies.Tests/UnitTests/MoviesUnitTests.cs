@@ -21,9 +21,10 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Xunit;
 
-namespace CNM.Movies.Tests
+namespace CNM.Movies.Tests.UnitTests
 {
-    public class MoviesTests
+    // Unit tests validating Movies API controller and domain HTTP client behaviors
+    public class MoviesUnitTests
     {
         // Verifies MoviesController.Ping returns status based on IImdbClient.PingAsync.
         [Theory]
@@ -46,6 +47,7 @@ namespace CNM.Movies.Tests
 
         // Ensures MoviesController.GetById returns Ok with model and passes imdbId/apiKey to client.
         [Fact]
+        // Asserts controller returns Ok and correct payload; verifies parameters are passed to client
         public async Task MoviesController_GetById_ReturnsOkWithClientResult_AndPassesParams()
         {
             var fakeImdbClient = new FakeImdbClient
@@ -210,7 +212,7 @@ namespace CNM.Movies.Tests
         private sealed class SimpleWebHostEnvironment : IWebHostEnvironment
         {
             public string EnvironmentName { get; set; } = Environments.Production;
-            public string ApplicationName { get; set; } = typeof(MoviesTests).Assembly.GetName().Name;
+            public string ApplicationName { get; set; } = typeof(MoviesUnitTests).Assembly.GetName().Name;
             public string WebRootPath { get; set; }
             public IFileProvider WebRootFileProvider { get; set; } = new NullFileProvider();
             public string ContentRootPath { get; set; } = Directory.GetCurrentDirectory();

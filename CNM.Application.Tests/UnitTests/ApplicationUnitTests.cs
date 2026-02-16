@@ -19,9 +19,10 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
-namespace CNM.Application.Tests
+namespace CNM.Application.Tests.UnitTests
 {
-    public class ApplicationTests
+    // Unit tests covering host builder, service registration, pipeline wiring, and repository behaviors
+    public class ApplicationUnitTests
     {
         // Verifies the host builder can be created and built successfully.
         [Fact]
@@ -84,14 +85,14 @@ namespace CNM.Application.Tests
             var repository = new ShowtimesRepository(databaseContext);
 
             // Add
-            var newShowtime = new CNM.Domain.Database.Entities.ShowtimeEntity
+            var newShowtime = new Domain.Database.Entities.ShowtimeEntity
             {
                 Id = 1,
                 StartDate = new DateTime(2020, 1, 1),
                 EndDate = new DateTime(2020, 1, 2),
                 AuditoriumId = 10,
                 Schedule = new[] { "10:00" },
-                Movie = new CNM.Domain.Database.Entities.MovieEntity { Title = "First", ImdbId = "tt1", Stars = "A", ReleaseDate = new DateTime(2019, 1, 1) }
+                Movie = new Domain.Database.Entities.MovieEntity { Title = "First", ImdbId = "tt1", Stars = "A", ReleaseDate = new DateTime(2019, 1, 1) }
             };
             var addedShowtime = repository.Add(newShowtime);
             Assert.Equal(1, databaseContext.Showtimes.Count());
@@ -105,14 +106,14 @@ namespace CNM.Application.Tests
             Assert.Single(filteredShowtimes);
 
             // Update existing
-            var updatedShowtime = repository.Update(new CNM.Domain.Database.Entities.ShowtimeEntity
+            var updatedShowtime = repository.Update(new Domain.Database.Entities.ShowtimeEntity
             {
                 Id = 1,
                 StartDate = new DateTime(2020, 1, 3),
                 EndDate = new DateTime(2020, 1, 4),
                 AuditoriumId = 11,
                 Schedule = new[] { "12:00" },
-                Movie = new CNM.Domain.Database.Entities.MovieEntity { Title = "Updated", ImdbId = "tt1", Stars = "B", ReleaseDate = new DateTime(2020, 1, 1) }
+                Movie = new Domain.Database.Entities.MovieEntity { Title = "Updated", ImdbId = "tt1", Stars = "B", ReleaseDate = new DateTime(2020, 1, 1) }
             });
             Assert.NotNull(updatedShowtime);
             Assert.Equal(11, updatedShowtime.AuditoriumId);
@@ -166,7 +167,7 @@ namespace CNM.Application.Tests
         private sealed class SimpleWebHostEnvironment : IWebHostEnvironment
         {
             public string EnvironmentName { get; set; } = Environments.Production;
-            public string ApplicationName { get; set; } = typeof(ApplicationTests).Assembly.GetName().Name;
+            public string ApplicationName { get; set; } = typeof(ApplicationUnitTests).Assembly.GetName().Name;
             public string WebRootPath { get; set; }
             public IFileProvider WebRootFileProvider { get; set; } = new NullFileProvider();
             public string ContentRootPath { get; set; } = Directory.GetCurrentDirectory();

@@ -32,9 +32,8 @@ using CNM.Domain.Models;
 
 namespace CNM.Showtimes.Tests
 {
-    public class ShowtimesTests
+    public class ShowtimesUnitTests
     {
-        // Filters list by date and title; validates only matching showtime is returned.
         [Fact]
         public void ShowtimeController_Get_FiltersByDateAndTitle()
         {
@@ -53,7 +52,6 @@ namespace CNM.Showtimes.Tests
             Assert.Equal("Star Movie", returnedShowtimesList.First().Movie.Title);
         }
 
-        // Creates a showtime, fetches IMDB data, and enriches movie fields before returning Created.
         [Fact]
         public async Task ShowtimeController_Post_ValidatesAndCreates_AndFetchesImdb()
         {
@@ -83,22 +81,22 @@ namespace CNM.Showtimes.Tests
             Assert.Equal(new DateTime(2020, 2, 2), createdShowtimeEntity.Movie.ReleaseDate);
         }
 
-        // Returns BadRequest when POST payload has missing/empty imdb id.
         [Fact]
-        public async Task ShowtimeController_Post_ReturnsBadRequest_WhenMissingImdbId()
+        public async Task ShowtimeController_Post_ReturnsProblemDetails_WhenMissingImdbId()
         {
             var showtimeController = new ShowtimeController(new FakeRepo(), new FakeImdbClient())
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
             };
 
-            var invalidShowtime = new CNM.Domain.Database.Entities.ShowtimeEntity { Movie = new CNM.Domain.Database.Entities.MovieEntity { ImdbId = "" } };
+            var invalidShowtime = new CNM.Domain.Database.Entities.ShowtimeEntity { Movie = new CNM.Domain.Database.Entities.MovieEntity { ImdbId = string.Empty } };
             var actionResult = await showtimeController.Post(invalidShowtime, "APIKEY");
-            var badRequest = Assert.IsType<BadRequestObjectResult>(actionResult);
-            Assert.Contains("required", badRequest.Value?.ToString());
+            var badRequest = Assert.IsType<ObjectResult>(actionResult);
+            Assert.Equal(400, badRequest.StatusCode);
+            var problem = Assert.IsType<ProblemDetails>(badRequest.Value);
+            Assert.Contains("required", problem.Detail, StringComparison.OrdinalIgnoreCase);
         }
 
-        // Updates showtime and refreshes IMDB fields when imdb id is present.
         [Fact]
         public async Task ShowtimeController_Put_UpdatesAndFetchesImdb_WhenImdbIdPresent()
         {
@@ -117,9 +115,8 @@ namespace CNM.Showtimes.Tests
             Assert.Equal(new DateTime(2021, 1, 1), updatedShowtimeEntity.Movie.ReleaseDate);
         }
 
-        // Returns NotFound when repository update yields null.
         [Fact]
-        public async Task ShowtimeController_Put_ReturnsNotFound_WhenUpdateNull()
+        public async Task ShowtimeController_Put_ReturnsProblemDetails_WhenUpdateNull()
         {
             var showtimeController = new ShowtimeController(new FakeRepo { UpdateResult = null }, new FakeImdbClient())
             {
@@ -127,12 +124,13 @@ namespace CNM.Showtimes.Tests
             };
             var notFoundPayload = new CNM.Domain.Database.Entities.ShowtimeEntity { Id = 3 };
             var actionResult = await showtimeController.Put(notFoundPayload, "APIKEY");
-            Assert.IsType<NotFoundResult>(actionResult);
+            var notFound = Assert.IsType<ObjectResult>(actionResult);
+            Assert.Equal(404, notFound.StatusCode);
+            Assert.IsType<ProblemDetails>(notFound.Value);
         }
 
-        // Delete returns NoContent for existing id; NotFound otherwise.
         [Fact]
-        public void ShowtimeController_Delete_NoContentOrNotFound()
+        public void ShowtimeController_Delete_NoContentOrProblemDetails()
         {
             var showtimesRepository = new FakeRepo { DeleteResult = new CNM.Domain.Database.Entities.ShowtimeEntity { Id = 5 } };
             var showtimeController = new ShowtimeController(showtimesRepository, new FakeImdbClient())
@@ -147,12 +145,13 @@ namespace CNM.Showtimes.Tests
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
             };
             var notFoundResult = showtimeController.Delete(6);
-            Assert.IsType<NotFoundResult>(notFoundResult);
+            var obj = Assert.IsType<ObjectResult>(notFoundResult);
+            Assert.Equal(404, obj.StatusCode);
+            Assert.IsType<ProblemDetails>(obj.Value);
         }
 
-        // Middleware catches exceptions and writes JSON 500 response.
         [Fact]
-        public void ErrorHandlingMiddleware_CatchesExceptionsAndWritesJson()
+        public void ErrorHandlingMiddleware_CatchesExceptionsAndWritesProblemDetails()
         {
             var logger = new LoggerFactory().CreateLogger<ErrorHandlingMiddleware>();
             var errorHandlingMiddleware = new ErrorHandlingMiddleware(async httpContext => throw new Exception("boom"), logger);
@@ -164,12 +163,11 @@ namespace CNM.Showtimes.Tests
             Assert.Null(exception);
             responseStream.Position = 0;
             var responseText = new StreamReader(responseStream).ReadToEnd();
-            Assert.Contains("internal_server_error", responseText);
-            Assert.Equal("application/json", httpContext.Response.ContentType);
+            Assert.Contains("Internal Server Error", responseText);
+            Assert.Equal("application/problem+json", httpContext.Response.ContentType);
             Assert.Equal(500, httpContext.Response.StatusCode);
         }
 
-        // Middleware logs timings for requests under /showtime path.
         [Fact]
         public void RequestTimingMiddleware_LogsForShowtimeRoutes()
         {
@@ -185,7 +183,6 @@ namespace CNM.Showtimes.Tests
             Assert.True(logMessages.Any(message => message.Contains("ShowtimeController request")));
         }
 
-        // Background service increments status count in memory cache on each ping iteration.
         [Fact]
         public async Task ImdbStatusBackgroundService_IncrementsCache_OnPing()
         {
@@ -207,7 +204,6 @@ namespace CNM.Showtimes.Tests
             Assert.True(count >= 1);
         }
 
-        // Token service parses base64 token into claims; throws for invalid.
         [Fact]
         public void CustomAuthenticationTokenService_Read_ParsesOrThrows()
         {
@@ -219,7 +215,6 @@ namespace CNM.Showtimes.Tests
             Assert.Throws<ReadTokenException>(() => tokenService.Read("notbase64"));
         }
 
-        // Authentication handler succeeds with valid header; fails with invalid.
         [Fact]
         public void CustomAuthenticationHandler_SucceedsOrFails()
         {
@@ -240,11 +235,8 @@ namespace CNM.Showtimes.Tests
             authenticationHandler.InitializeAsync(new AuthenticationScheme(CustomAuthenticationSchemeOptions.AuthenticationScheme, null, typeof(CustomAuthenticationHandler)), httpContext);
             authenticateResult = authenticationHandler.AuthenticateAsync().GetAwaiter().GetResult();
             Assert.False(authenticateResult.Succeeded);
-
-            // local inline options monitor stub
         }
 
-        // Simple inline IOptionsMonitor implementation for handler initialization.
         private sealed class OptionsMonitorInline<T> : Microsoft.Extensions.Options.IOptionsMonitor<T>
         {
             private readonly T _current;
@@ -254,7 +246,6 @@ namespace CNM.Showtimes.Tests
             public IDisposable OnChange(Action<T, string> listener) => null;
         }
 
-        // Smoke test: host builder creates and builds successfully.
         [Fact]
         public void Program_CreateHostBuilder_Builds()
         {
@@ -264,7 +255,6 @@ namespace CNM.Showtimes.Tests
             Assert.NotNull(host.Services);
         }
 
-        // Ensures Startup.ConfigureServices registers required services.
         [Fact]
         public void Startup_ConfigureServices_RegistersDependencies()
         {
@@ -282,7 +272,6 @@ namespace CNM.Showtimes.Tests
             Assert.NotNull(serviceProvider.GetService<IActionDescriptorCollectionProvider>());
         }
 
-        // Smoke test: Startup.Configure pipeline executes without throwing.
         [Fact]
         public void Startup_Configure_DoesNotThrow()
         {
@@ -300,7 +289,6 @@ namespace CNM.Showtimes.Tests
             Assert.Null(exception);
         }
 
-        // In-memory repository test double used by controller tests.
         private sealed class FakeRepo : Interfaces.IShowtimesRepository
         {
             public DomainDb.Entities.ShowtimeEntity DeleteResult { get; set; }
@@ -335,7 +323,6 @@ namespace CNM.Showtimes.Tests
             };
         }
 
-        // IImdbClient stub with configurable responses for tests.
         private sealed class FakeImdbClient : IImdbClient
         {
             public bool Ping { get; set; }
@@ -344,7 +331,6 @@ namespace CNM.Showtimes.Tests
             public Task<ImdbTitleResponse> GetByIdAsync(string imdbId, string apiKey) => Task.FromResult(GetById);
         }
 
-        // Logger provider capturing formatted messages to a list for assertions.
         private sealed class ListLoggerProvider : ILoggerProvider
         {
             private readonly List<string> _logs;
@@ -364,11 +350,10 @@ namespace CNM.Showtimes.Tests
             }
         }
 
-        // Minimal IWebHostEnvironment implementation for Startup tests.
         private sealed class SimpleWebHostEnvironment : IWebHostEnvironment
         {
             public string EnvironmentName { get; set; } = Environments.Production;
-            public string ApplicationName { get; set; } = typeof(ShowtimesTests).Assembly.GetName().Name;
+            public string ApplicationName { get; set; } = typeof(ShowtimesUnitTests).Assembly.GetName().Name;
             public string WebRootPath { get; set; }
             public IFileProvider WebRootFileProvider { get; set; } = new NullFileProvider();
             public string ContentRootPath { get; set; } = Directory.GetCurrentDirectory();
