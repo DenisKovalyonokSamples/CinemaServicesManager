@@ -24,6 +24,7 @@ namespace CNM.Movies.API
         {
             services.AddSingleton<ICustomAuthenticationTokenService, CustomAuthenticationTokenService>();
             services.AddDomainServices(Configuration);
+            services.AddScoped<CNM.Application.Services.MoviesService>();
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {

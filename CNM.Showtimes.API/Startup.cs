@@ -35,6 +35,7 @@ namespace CNM.Showtimes.API
             var useInMemory = _environment.IsDevelopment() || string.Equals(Configuration["Database:Provider"], "InMemory", System.StringComparison.OrdinalIgnoreCase);
             services.AddDatabase(Configuration, useInMemory);
             services.AddScoped<IShowtimesRepository, Repositories.ShowtimesRepository>();
+            services.AddScoped<CNM.Application.Services.ShowtimesService>();
             services.AddSingleton<ICustomAuthenticationTokenService, CustomAuthenticationTokenService>();
             services.AddMemoryCache();
             services.AddDomainServices(Configuration);
