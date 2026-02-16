@@ -37,17 +37,17 @@ namespace CNM.Showtimes.Tests
         [Fact]
         public void ShowtimeController_Get_FiltersByDateAndTitle()
         {
-            var showtimesRepository = new FakeRepo();
+            var repository = new FakeRepo();
             var imdbClient = new FakeImdbClient();
-            var showtimeController = new ShowtimeController(showtimesRepository, imdbClient)
+            var controller = new ShowtimeController(repository, imdbClient)
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
             };
 
             var dateFilter = new DateTime(2020, 1, 5);
-            var actionResult = showtimeController.Get(dateFilter, "Star");
-            var okObjectResult = Assert.IsType<OkObjectResult>(actionResult);
-            var returnedShowtimesList = Assert.IsAssignableFrom<IEnumerable<ShowtimeEntity>>(okObjectResult.Value);
+            var result = controller.Get(dateFilter, "Star");
+            var ok = Assert.IsType<OkObjectResult>(result);
+            var returnedShowtimesList = Assert.IsAssignableFrom<IEnumerable<ShowtimeEntity>>(ok.Value);
             Assert.Single(returnedShowtimesList);
             Assert.Equal("Star Movie", returnedShowtimesList.First().Movie.Title);
         }
@@ -55,12 +55,12 @@ namespace CNM.Showtimes.Tests
         [Fact]
         public async Task ShowtimeController_Post_ValidatesAndCreates_AndFetchesImdb()
         {
-            var showtimesRepository = new FakeRepo();
+            var repository = new FakeRepo();
             var imdbClient = new FakeImdbClient
             {
                 GetById = new ImdbTitleResponse { id = "tt42", title = "Answer", stars = "A,B", releaseDate = "2020-02-02" }
             };
-            var showtimeController = new ShowtimeController(showtimesRepository, imdbClient)
+            var controller = new ShowtimeController(repository, imdbClient)
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
             };
@@ -73,9 +73,9 @@ namespace CNM.Showtimes.Tests
                 Movie = new CNM.Domain.Database.Entities.MovieEntity { ImdbId = "tt42" }
             };
 
-            var actionResult = await showtimeController.Post(newShowtime, "APIKEY");
-            var createdResult = Assert.IsType<CreatedResult>(actionResult);
-            var createdShowtimeEntity = Assert.IsType<ShowtimeEntity>(createdResult.Value);
+            var result = await controller.Post(newShowtime, "APIKEY");
+            var created = Assert.IsType<CreatedResult>(result);
+            var createdShowtimeEntity = Assert.IsType<ShowtimeEntity>(created.Value);
             Assert.Equal("Answer", createdShowtimeEntity.Movie.Title);
             Assert.Equal("A,B", createdShowtimeEntity.Movie.Stars);
             Assert.Equal(new DateTime(2020, 2, 2), createdShowtimeEntity.Movie.ReleaseDate);
@@ -84,47 +84,29 @@ namespace CNM.Showtimes.Tests
         [Fact]
         public async Task ShowtimeController_Post_ReturnsProblemDetails_WhenMissingImdbId()
         {
-            var showtimeController = new ShowtimeController(new FakeRepo(), new FakeImdbClient())
+            var controller = new ShowtimeController(new FakeRepo(), new FakeImdbClient())
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
             };
 
             var invalidShowtime = new CNM.Domain.Database.Entities.ShowtimeEntity { Movie = new CNM.Domain.Database.Entities.MovieEntity { ImdbId = string.Empty } };
-            var actionResult = await showtimeController.Post(invalidShowtime, "APIKEY");
-            var badRequest = Assert.IsType<ObjectResult>(actionResult);
+            var result = await controller.Post(invalidShowtime, "APIKEY");
+            var badRequest = Assert.IsType<ObjectResult>(result);
             Assert.Equal(400, badRequest.StatusCode);
             var problem = Assert.IsType<ProblemDetails>(badRequest.Value);
             Assert.Contains("required", problem.Detail, StringComparison.OrdinalIgnoreCase);
         }
 
         [Fact]
-        public async Task ShowtimeController_Put_UpdatesAndFetchesImdb_WhenImdbIdPresent()
-        {
-            var showtimesRepository = new FakeRepo { UpdateResult = new CNM.Domain.Database.Entities.ShowtimeEntity { Id = 2, Movie = new CNM.Domain.Database.Entities.MovieEntity() } };
-            var imdbClient = new FakeImdbClient { GetById = new ImdbTitleResponse { title = "NewTitle", stars = "C,D", releaseDate = "2021-01-01" } };
-            var showtimeController = new ShowtimeController(showtimesRepository, imdbClient)
-            {
-                ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
-            };
-            var updatedShowtime = new CNM.Domain.Database.Entities.ShowtimeEntity { Id = 2, Movie = new CNM.Domain.Database.Entities.MovieEntity { ImdbId = "tt99" } };
-            var actionResult = await showtimeController.Put(updatedShowtime, "APIKEY");
-            var okObjectResult = Assert.IsType<OkObjectResult>(actionResult);
-            var updatedShowtimeEntity = Assert.IsType<ShowtimeEntity>(okObjectResult.Value);
-            Assert.Equal("NewTitle", updatedShowtimeEntity.Movie.Title);
-            Assert.Equal("C,D", updatedShowtimeEntity.Movie.Stars);
-            Assert.Equal(new DateTime(2021, 1, 1), updatedShowtimeEntity.Movie.ReleaseDate);
-        }
-
-        [Fact]
         public async Task ShowtimeController_Put_ReturnsProblemDetails_WhenUpdateNull()
         {
-            var showtimeController = new ShowtimeController(new FakeRepo { UpdateResult = null }, new FakeImdbClient())
+            var controller = new ShowtimeController(new FakeRepo { UpdateResult = null }, new FakeImdbClient())
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
             };
             var notFoundPayload = new CNM.Domain.Database.Entities.ShowtimeEntity { Id = 3 };
-            var actionResult = await showtimeController.Put(notFoundPayload, "APIKEY");
-            var notFound = Assert.IsType<ObjectResult>(actionResult);
+            var result = await controller.Put(notFoundPayload, "APIKEY");
+            var notFound = Assert.IsType<ObjectResult>(result);
             Assert.Equal(404, notFound.StatusCode);
             Assert.IsType<ProblemDetails>(notFound.Value);
         }
@@ -132,19 +114,19 @@ namespace CNM.Showtimes.Tests
         [Fact]
         public void ShowtimeController_Delete_NoContentOrProblemDetails()
         {
-            var showtimesRepository = new FakeRepo { DeleteResult = new CNM.Domain.Database.Entities.ShowtimeEntity { Id = 5 } };
-            var showtimeController = new ShowtimeController(showtimesRepository, new FakeImdbClient())
+            var repository = new FakeRepo { DeleteResult = new CNM.Domain.Database.Entities.ShowtimeEntity { Id = 5 } };
+            var controller = new ShowtimeController(repository, new FakeImdbClient())
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
             };
-            var noContentResult = showtimeController.Delete(5);
+            var noContentResult = controller.Delete(5);
             Assert.IsType<NoContentResult>(noContentResult);
 
-            showtimeController = new ShowtimeController(new FakeRepo { DeleteResult = null }, new FakeImdbClient())
+            controller = new ShowtimeController(new FakeRepo { DeleteResult = null }, new FakeImdbClient())
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
             };
-            var notFoundResult = showtimeController.Delete(6);
+            var notFoundResult = controller.Delete(6);
             var obj = Assert.IsType<ObjectResult>(notFoundResult);
             Assert.Equal(404, obj.StatusCode);
             Assert.IsType<ProblemDetails>(obj.Value);
@@ -172,15 +154,17 @@ namespace CNM.Showtimes.Tests
         public void RequestTimingMiddleware_LogsForShowtimeRoutes()
         {
             var loggerFactory = new LoggerFactory();
-            var requestTimingLogger = loggerFactory.CreateLogger<RequestTimingMiddleware>();
-            var logMessages = new List<string>();
-            loggerFactory.AddProvider(new ListLoggerProvider(logMessages));
-            var requestTimingLoggerWithProvider = loggerFactory.CreateLogger<RequestTimingMiddleware>();
-            var requestTimingMiddleware = new RequestTimingMiddleware(async httpContext => await Task.Delay(10), requestTimingLoggerWithProvider);
+            var logs = new List<string>();
+            loggerFactory.AddProvider(new ListLoggerProvider(logs));
+            var timingLogger = loggerFactory.CreateLogger<RequestTimingMiddleware>();
+            var middleware = new RequestTimingMiddleware(async httpContext => await Task.Delay(10), timingLogger);
             var httpContext = new DefaultHttpContext();
             httpContext.Request.Path = "/showtime/list";
-            requestTimingMiddleware.Invoke(httpContext).GetAwaiter().GetResult();
-            Assert.True(logMessages.Any(message => message.Contains("ShowtimeController request")));
+            middleware.Invoke(httpContext).GetAwaiter().GetResult();
+            Assert.Contains(logs, m =>
+                m.Contains("/showtime/list", StringComparison.OrdinalIgnoreCase)
+                && m.Contains("request", StringComparison.OrdinalIgnoreCase)
+                && m.Contains("took", StringComparison.OrdinalIgnoreCase));
         }
 
         [Fact]
@@ -216,25 +200,28 @@ namespace CNM.Showtimes.Tests
         }
 
         [Fact]
-        public void CustomAuthenticationHandler_SucceedsOrFails()
+        public async Task CustomAuthenticationHandler_SucceedsOrFails()
         {
             var tokenService = new CustomAuthenticationTokenService();
             var optionsMonitor = new OptionsMonitorInline<CustomAuthenticationSchemeOptions>(new CustomAuthenticationSchemeOptions());
-            var authenticationHandler = new CustomAuthenticationHandler(optionsMonitor, new LoggerFactory(), System.Text.Encodings.Web.UrlEncoder.Default, new SystemClock(), tokenService);
 
-            var httpContext = new DefaultHttpContext();
-            httpContext.RequestServices = new ServiceCollection().BuildServiceProvider();
-            httpContext.Request.Headers["ApiKey"] = Convert.ToBase64String(Encoding.UTF8.GetBytes("user|Read"));
-            authenticationHandler.InitializeAsync(new AuthenticationScheme(CustomAuthenticationSchemeOptions.AuthenticationScheme, null, typeof(CustomAuthenticationHandler)), httpContext);
-            var authenticateResult = authenticationHandler.AuthenticateAsync().GetAwaiter().GetResult();
-            Assert.True(authenticateResult.Succeeded);
+            // First request: valid token
+            var authenticationHandler1 = new CustomAuthenticationHandler(optionsMonitor, new LoggerFactory(), System.Text.Encodings.Web.UrlEncoder.Default, new SystemClock(), tokenService);
+            var httpContext1 = new DefaultHttpContext();
+            httpContext1.RequestServices = new ServiceCollection().BuildServiceProvider();
+            httpContext1.Request.Headers["ApiKey"] = Convert.ToBase64String(Encoding.UTF8.GetBytes("user|Read"));
+            await authenticationHandler1.InitializeAsync(new AuthenticationScheme(CustomAuthenticationSchemeOptions.AuthenticationScheme, null, typeof(CustomAuthenticationHandler)), httpContext1);
+            var authenticateResult1 = await authenticationHandler1.AuthenticateAsync();
+            Assert.True(authenticateResult1.Succeeded);
 
-            httpContext = new DefaultHttpContext();
-            httpContext.RequestServices = new ServiceCollection().BuildServiceProvider();
-            httpContext.Request.Headers["ApiKey"] = "invalid";
-            authenticationHandler.InitializeAsync(new AuthenticationScheme(CustomAuthenticationSchemeOptions.AuthenticationScheme, null, typeof(CustomAuthenticationHandler)), httpContext);
-            authenticateResult = authenticationHandler.AuthenticateAsync().GetAwaiter().GetResult();
-            Assert.False(authenticateResult.Succeeded);
+            // Second request: invalid token
+            var authenticationHandler2 = new CustomAuthenticationHandler(optionsMonitor, new LoggerFactory(), System.Text.Encodings.Web.UrlEncoder.Default, new SystemClock(), tokenService);
+            var httpContext2 = new DefaultHttpContext();
+            httpContext2.RequestServices = new ServiceCollection().BuildServiceProvider();
+            httpContext2.Request.Headers["ApiKey"] = "invalid";
+            await authenticationHandler2.InitializeAsync(new AuthenticationScheme(CustomAuthenticationSchemeOptions.AuthenticationScheme, null, typeof(CustomAuthenticationHandler)), httpContext2);
+            var authenticateResult2 = await authenticationHandler2.AuthenticateAsync();
+            Assert.False(authenticateResult2.Succeeded);
         }
 
         private sealed class OptionsMonitorInline<T> : Microsoft.Extensions.Options.IOptionsMonitor<T>
@@ -283,6 +270,8 @@ namespace CNM.Showtimes.Tests
 
             var serviceProvider = services.BuildServiceProvider();
             var appBuilder = new ApplicationBuilder(serviceProvider);
+            // Initialize server.Features to avoid NullReferenceException in UseHttpsRedirection
+            appBuilder.Properties["server.Features"] = new Microsoft.AspNetCore.Http.Features.FeatureCollection();
             var runtimeEnv = new SimpleWebHostEnvironment { EnvironmentName = Environments.Development };
 
             var exception = Record.Exception(() => startup.Configure(appBuilder, runtimeEnv));

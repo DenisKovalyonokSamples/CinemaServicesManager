@@ -23,11 +23,22 @@ namespace CNM.Showtimes.API.Auth
 
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {
+            // Validate presence of header
+            if (!Request.Headers.TryGetValue("ApiKey", out var apiKeyValues) || Microsoft.Extensions.Primitives.StringValues.IsNullOrEmpty(apiKeyValues))
+            {
+                return Task.FromResult(AuthenticateResult.NoResult());
+            }
+
+            var apiKey = apiKeyValues.ToString().Trim();
+
             try
             {
-                var apiKey = Context.Request.Headers["ApiKey"];
                 var principal = _tokenService.Read(apiKey);
-                return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(principal, CustomAuthenticationSchemeOptions.AuthenticationScheme)));
+                return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(principal, Scheme.Name)));
+            }
+            catch (ReadTokenException)
+            {
+                return Task.FromResult(AuthenticateResult.Fail("Invalid ApiKey token."));
             }
             catch (System.Exception ex)
             {

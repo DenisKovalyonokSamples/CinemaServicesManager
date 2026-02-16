@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using CNM.Domain.Database;
 using CNM.Domain.Interfaces;
@@ -10,6 +11,8 @@ using Middleware = CNM.Application.Middleware;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -62,16 +65,29 @@ namespace CNM.Application.Tests.UnitTests
             var startup = new Startup(configuration);
             var environment = new SimpleWebHostEnvironment { EnvironmentName = Environments.Production };
             services.AddSingleton<IWebHostEnvironment>(environment);
+            // Provide a minimal server so ApplicationBuilder.ServerFeatures is non-null
+            services.AddSingleton<IServer, DummyServer>();
             // Add minimal services used in Configure
-            services.AddRouting();
-            services.AddControllers();
-            services.AddDbContext<DatabaseContext>(opts => opts.UseInMemoryDatabase("test"));
-            services.AddTransient<IShowtimesRepository, ShowtimesRepository>();
+            services.AddLogging();
+            // Ensure HttpsRedirection has a defined HTTPS port in the bare test host
+            services.AddHttpsRedirection(o => o.HttpsPort = 443);
+
+            // Use the application's real registrations to ensure HealthChecks and other
+            // dependencies required by Configure() are present
+            startup.ConfigureServices(services);
             var serviceProvider = services.BuildServiceProvider();
-            var appBuilder = new ApplicationBuilder(serviceProvider);
+            var appBuilder = new ApplicationBuilder(serviceProvider, new FeatureCollection());
 
             var exception = Record.Exception(() => startup.Configure(appBuilder, environment));
             Assert.Null(exception);
+        }
+
+        private sealed class DummyServer : IServer
+        {
+            public IFeatureCollection Features { get; } = new FeatureCollection();
+            public void Dispose() { }
+            public Task StartAsync<TContext>(IHttpApplication<TContext> app, CancellationToken cancellationToken) => Task.CompletedTask;
+            public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
         }
 
         // SampleData was removed; skip seeding validation.
@@ -129,7 +145,7 @@ namespace CNM.Application.Tests.UnitTests
             Assert.Null(nonExistingDeletedShowtime);
         }
 
-        // Ensures the error handling middleware catches exceptions and returns JSON 500.
+        // Ensures the error handling middleware catches exceptions and returns RFC7807 ProblemDetails
         [Fact]
         public void ErrorHandlingMiddleware_CatchesExceptionsAndWritesJson()
         {
@@ -143,8 +159,8 @@ namespace CNM.Application.Tests.UnitTests
             Assert.Null(exception);
             memoryStream.Position = 0;
             var responseText = new StreamReader(memoryStream).ReadToEnd();
-            Assert.Contains("internal_server_error", responseText);
-            Assert.Equal("application/json", httpContext.Response.ContentType);
+            Assert.Contains("Internal Server Error", responseText);
+            Assert.Equal("application/problem+json", httpContext.Response.ContentType);
             Assert.Equal(500, httpContext.Response.StatusCode);
         }
 
@@ -160,7 +176,7 @@ namespace CNM.Application.Tests.UnitTests
             var httpContext = new DefaultHttpContext();
             httpContext.Request.Path = "/showtime/list";
             middleware.Invoke(httpContext).GetAwaiter().GetResult();
-            Assert.True(logMessages.Any(message => message.Contains("ShowtimeController request")));
+            Assert.Contains(logMessages, message => message.Contains("Request /showtime/list took"));
         }
 
         // Minimal IWebHostEnvironment implementation for tests.

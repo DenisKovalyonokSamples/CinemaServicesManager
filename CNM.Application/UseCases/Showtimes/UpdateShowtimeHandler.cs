@@ -26,7 +26,8 @@ namespace CNM.Application.UseCases.Showtimes
                 payload.Movie.Stars = imdbTitle?.stars ?? payload.Movie.Stars;
                 if (DateTime.TryParse(imdbTitle?.releaseDate, out var parsedReleaseDate)) payload.Movie.ReleaseDate = parsedReleaseDate;
             }
-            return _repository.Update(payload);
+            var result = _repository.Update(payload);
+            return result;
         }
     }
 }
