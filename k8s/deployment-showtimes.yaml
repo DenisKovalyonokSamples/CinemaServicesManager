@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: showtimes-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: showtimes-api
+  template:
+    metadata:
+      labels:
+        app: showtimes-api
+    spec:
+      containers:
+      - name: showtimes-api
+        image: showtimes-api:latest
+        ports:
+        - containerPort: 80
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: showtimes-api
+spec:
+  type: ClusterIP
+  selector:
+    app: showtimes-api
+  ports:
+  - port: 80
+    targetPort: 80

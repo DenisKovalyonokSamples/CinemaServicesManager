@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: application-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: application-api
+  template:
+    metadata:
+      labels:
+        app: application-api
+    spec:
+      containers:
+      - name: application-api
+        image: application-api:latest
+        ports:
+        - containerPort: 80
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: application-api
+spec:
+  type: ClusterIP
+  selector:
+    app: application-api
+  ports:
+  - port: 80
+    targetPort: 80

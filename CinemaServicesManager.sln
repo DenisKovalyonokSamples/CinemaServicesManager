@@ -33,6 +33,16 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionIt
 		SolutionStructure.puml = SolutionStructure.puml
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "k8s", "k8s", "{320FCAAA-1E7F-4F6A-938A-FA70A500C679}"
+	ProjectSection(SolutionItems) = preProject
+		k8s\deployment-application.yaml = k8s\deployment-application.yaml
+		k8s\deployment-gateway.yaml = k8s\deployment-gateway.yaml
+		k8s\deployment-movies.yaml = k8s\deployment-movies.yaml
+		k8s\deployment-showtimes.yaml = k8s\deployment-showtimes.yaml
+		k8s\ingress.yaml = k8s\ingress.yaml
+		k8s\README.md = k8s\README.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

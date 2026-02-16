@@ -1,0 +1,38 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cinema-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /gateway(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: gateway-api
+            port:
+              number: 80
+      - path: /showtimes(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: showtimes-api
+            port:
+              number: 80
+      - path: /movies(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: movies-api
+            port:
+              number: 80
+      - path: /application(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: application-api
+            port:
+              number: 80
