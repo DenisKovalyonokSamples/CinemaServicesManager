@@ -15,17 +15,35 @@ namespace CNM.Showtimes.API.Controllers
     [Route("showtime")]
     public class ShowtimeController : ControllerBase
     {
-        private readonly CNM.Application.Services.ShowtimesService _showtimesService;
-        public ShowtimeController(DomainDb.IShowtimesRepository showtimesRepository, IImdbClient imdbClient)
+        private readonly MediatR.IMediator _mediator;
+        public ShowtimeController(MediatR.IMediator mediator)
         {
-            _showtimesService = new CNM.Application.Services.ShowtimesService(showtimesRepository, imdbClient);
+            _mediator = mediator;
+        }
+
+        // Compatibility constructor for existing tests
+        public ShowtimeController(IShowtimesRepository repository, IImdbClient imdbClient)
+        {
+            MediatR.ServiceFactory factory = type =>
+            {
+                if (type == typeof(CNM.Application.UseCases.Showtimes.GetShowtimesHandler))
+                    return new CNM.Application.UseCases.Showtimes.GetShowtimesHandler(repository);
+                if (type == typeof(CNM.Application.UseCases.Showtimes.CreateShowtimeHandler))
+                    return new CNM.Application.UseCases.Showtimes.CreateShowtimeHandler(repository, imdbClient);
+                if (type == typeof(CNM.Application.UseCases.Showtimes.UpdateShowtimeHandler))
+                    return new CNM.Application.UseCases.Showtimes.UpdateShowtimeHandler(repository, imdbClient);
+                if (type == typeof(CNM.Application.UseCases.Showtimes.DeleteShowtimeHandler))
+                    return new CNM.Application.UseCases.Showtimes.DeleteShowtimeHandler(repository);
+                return null;
+            };
+            _mediator = new MediatR.Mediator(factory);
         }
 
         [HttpGet]
         [Authorize(Policy = "Read")]
         public IActionResult Get([FromQuery] DateTime? date, [FromQuery] string title)
         {
-            var showtimes = _showtimesService.GetShowtimes(date, title);
+            var showtimes = _mediator.Send(new CNM.Application.UseCases.Showtimes.GetShowtimesQuery { Date = date, Title = title }).GetAwaiter().GetResult();
             return Ok(showtimes.ToList());
         }
 
@@ -38,7 +56,7 @@ namespace CNM.Showtimes.API.Controllers
             if (string.IsNullOrWhiteSpace(imdbApiKey))
                 return BadRequest("imdb_api_key required");
 
-            var createdShowtime = await _showtimesService.CreateAsync(payload, imdbApiKey);
+            var createdShowtime = await _mediator.Send(new CNM.Application.UseCases.Showtimes.CreateShowtimeCommand { Payload = payload, ImdbApiKey = imdbApiKey });
             return Created($"/showtime/{createdShowtime.Id}", createdShowtime);
         }
 
@@ -46,7 +64,7 @@ namespace CNM.Showtimes.API.Controllers
         [Authorize(Policy = "Write")]
         public async Task<IActionResult> Put([FromBody] DomainEntities.ShowtimeEntity payload, [FromQuery] string imdbApiKey)
         {
-            var updatedShowtime = await _showtimesService.UpdateAsync(payload, imdbApiKey);
+            var updatedShowtime = await _mediator.Send(new CNM.Application.UseCases.Showtimes.UpdateShowtimeCommand { Payload = payload, ImdbApiKey = imdbApiKey });
             if (updatedShowtime == null) return NotFound();
             return Ok(updatedShowtime);
         }
@@ -55,7 +73,7 @@ namespace CNM.Showtimes.API.Controllers
         [Authorize(Policy = "Write")]
         public IActionResult Delete(int id)
         {
-            var deleted = _showtimesService.Delete(id);
+            var deleted = _mediator.Send(new CNM.Application.UseCases.Showtimes.DeleteShowtimeCommand { Id = id }).GetAwaiter().GetResult();
             if (!deleted) return NotFound();
             return NoContent();
         }

@@ -14,6 +14,7 @@ using Microsoft.OpenApi.Models;
 using CNM.Domain.Interfaces;
 using CNM.Domain.Clients;
 using CNM.Showtimes.API.Options;
+using MediatR;
 
 namespace CNM.Showtimes.API
 {
@@ -35,7 +36,7 @@ namespace CNM.Showtimes.API
             var useInMemory = _environment.IsDevelopment() || string.Equals(Configuration["Database:Provider"], "InMemory", System.StringComparison.OrdinalIgnoreCase);
             services.AddDatabase(Configuration, useInMemory);
             services.AddScoped<IShowtimesRepository, Repositories.ShowtimesRepository>();
-            services.AddScoped<CNM.Application.Services.ShowtimesService>();
+            services.AddMediatR(typeof(CNM.Application.Startup).Assembly);
             services.AddSingleton<ICustomAuthenticationTokenService, CustomAuthenticationTokenService>();
             services.AddMemoryCache();
             services.AddDomainServices(Configuration);

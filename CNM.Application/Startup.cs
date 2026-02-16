@@ -11,6 +11,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.OpenApi.Models;
+using MediatR;
+using CNM.Domain.Clients;
 
 namespace CNM.Application
 {
@@ -37,6 +39,8 @@ namespace CNM.Application
                 }
             });
             services.AddTransient<Interfaces.IShowtimesRepository, Repositories.ShowtimesRepository>();
+            services.AddDomainServices(Configuration);
+            services.AddMediatR(typeof(Startup).Assembly);
             services.AddAuthorization();
             services.AddControllers()
                 .AddNewtonsoftJson(opts =>
