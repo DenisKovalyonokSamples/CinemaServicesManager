@@ -1,9 +1,9 @@
+// Integration tests for Gateway API. Validates proxying, endpoint configuration, and downstream service handling.
 using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 using CNM.Gateway.API;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration;
 using Xunit;
 

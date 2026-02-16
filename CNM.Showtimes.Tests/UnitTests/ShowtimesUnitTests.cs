@@ -1,3 +1,4 @@
+// Unit tests for Showtimes API controllers, middleware, and domain logic. Covers CRUD, error handling, and service registration.
 using System;
 using System.Collections.Generic;
 using System.IO;

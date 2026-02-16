@@ -1,3 +1,4 @@
+// Integration tests for Showtimes API. Validates endpoints, authentication, and database behaviors.
 using System;
 using System.Linq;
 using System.Net;

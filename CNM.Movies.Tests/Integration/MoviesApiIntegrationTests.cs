@@ -1,3 +1,4 @@
+// Integration tests for Movies API. Validates endpoints, authentication, and external client behaviors.
 using System;
 using System.Net;
 using System.Net.Http;

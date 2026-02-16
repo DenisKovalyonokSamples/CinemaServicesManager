@@ -1,3 +1,4 @@
+// Unit tests for Movies API controllers and domain HTTP client behaviors. Covers ping and client logic.
 using System;
 using System.IO;
 using System.Net;

@@ -1,3 +1,4 @@
+// Unit tests for Application host builder, service registration, pipeline wiring, and repository behaviors.
 using System;
 using System.Collections.Generic;
 using System.IO;

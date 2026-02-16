@@ -1,3 +1,4 @@
+// Unit tests for Gateway API controller proxy behavior and startup wiring. Covers NotFound and proxy logic.
 using System;
 using System.Collections.Generic;
 using System.IO;

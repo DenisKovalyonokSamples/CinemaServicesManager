@@ -1,3 +1,4 @@
+// Helper class for seeding test data into the in-memory database for integration tests.
 using System;
 using CNM.Domain.Database;
 using CNM.Domain.Database.Entities;
