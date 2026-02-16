@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using System;
-using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace CNM.Application.Middleware
@@ -25,11 +27,34 @@ namespace CNM.Application.Middleware
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unhandled exception");
-                context.Response.StatusCode = 500;
-                context.Response.ContentType = "application/json";
-                var payload = JsonSerializer.Serialize(new { error = "internal_server_error" });
-                await context.Response.WriteAsync(payload);
+                var problem = new ProblemDetails
+                {
+                    Type = "https://httpstatuses.com/500",
+                    Title = "Internal Server Error",
+                    Status = StatusCodes.Status500InternalServerError,
+                    Detail = _environmentMessage(ex)
+                };
+                problem.Extensions["trace_id"] = context.TraceIdentifier;
+
+                context.Response.StatusCode = problem.Status ?? StatusCodes.Status500InternalServerError;
+                context.Response.ContentType = "application/problem+json";
+
+                // Ensure snake_case to match controllers' configuration
+                var json = JsonConvert.SerializeObject(problem, new JsonSerializerSettings
+                {
+                    ContractResolver = new DefaultContractResolver
+                    {
+                        NamingStrategy = new SnakeCaseNamingStrategy()
+                    }
+                });
+                await context.Response.WriteAsync(json);
             }
+        }
+
+        private static string _environmentMessage(Exception ex)
+        {
+            // Keep minimal detail to avoid leaking internals; include message only
+            return ex.Message;
         }
     }
 }

@@ -87,7 +87,8 @@ namespace CNM.Application
             // Authentication/Authorization must be ordered after routing and before endpoints
             app.UseAuthorization();
 
-            // Seeding disabled: CNM.Showtimes.API.Database.SampleData was removed
+            // Consistent error handling
+            app.UseMiddleware<CNM.Application.Middleware.ErrorHandlingMiddleware>();
 
             app.UseEndpoints(endpoints =>
             {

@@ -52,9 +52,9 @@ namespace CNM.Showtimes.API.Controllers
         public async Task<IActionResult> Post([FromBody] DomainEntities.ShowtimeEntity payload, [FromQuery] string imdbApiKey)
         {
             if (payload?.Movie == null || string.IsNullOrWhiteSpace(payload.Movie.ImdbId))
-                return BadRequest("movie.imdb_id required");
+                return Problem(title: "Bad Request", detail: "movie.imdb_id required", statusCode: 400, type: "https://httpstatuses.com/400");
             if (string.IsNullOrWhiteSpace(imdbApiKey))
-                return BadRequest("imdb_api_key required");
+                return Problem(title: "Bad Request", detail: "imdb_api_key required", statusCode: 400, type: "https://httpstatuses.com/400");
 
             var createdShowtime = await _mediator.Send(new CNM.Application.UseCases.Showtimes.CreateShowtimeCommand { Payload = payload, ImdbApiKey = imdbApiKey });
             return Created($"/showtime/{createdShowtime.Id}", createdShowtime);
@@ -65,7 +65,7 @@ namespace CNM.Showtimes.API.Controllers
         public async Task<IActionResult> Put([FromBody] DomainEntities.ShowtimeEntity payload, [FromQuery] string imdbApiKey)
         {
             var updatedShowtime = await _mediator.Send(new CNM.Application.UseCases.Showtimes.UpdateShowtimeCommand { Payload = payload, ImdbApiKey = imdbApiKey });
-            if (updatedShowtime == null) return NotFound();
+            if (updatedShowtime == null) return Problem(title: "Not Found", detail: "Showtime not found", statusCode: 404, type: "https://httpstatuses.com/404");
             return Ok(updatedShowtime);
         }
 
@@ -74,7 +74,7 @@ namespace CNM.Showtimes.API.Controllers
         public IActionResult Delete(int id)
         {
             var deleted = _mediator.Send(new CNM.Application.UseCases.Showtimes.DeleteShowtimeCommand { Id = id }).GetAwaiter().GetResult();
-            if (!deleted) return NotFound();
+            if (!deleted) return Problem(title: "Not Found", detail: "Showtime not found", statusCode: 404, type: "https://httpstatuses.com/404");
             return NoContent();
         }
 
