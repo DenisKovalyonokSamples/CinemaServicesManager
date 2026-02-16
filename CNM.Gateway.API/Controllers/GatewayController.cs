@@ -11,6 +11,7 @@ namespace CNM.Gateway.API.Controllers
 {
     [ApiController]
     [Route("{service}/{*path}")]
+    [ApiConventionType(typeof(DefaultApiConventions))]
     public class GatewayController : ControllerBase
     {
         private readonly IHttpClientFactory _httpClientFactory;
@@ -25,6 +26,8 @@ namespace CNM.Gateway.API.Controllers
         }
 
         [HttpGet, HttpPost, HttpPut, HttpDelete, HttpPatch]
+        [ProducesResponseType(typeof(FileContentResult), 200)]
+        [ProducesResponseType(typeof(NotFoundObjectResult), 404)]
         public async Task<IActionResult> Proxy(string service, string path)
         {
             var correlationId = HttpContext.Items["CorrelationId"]?.ToString() ?? System.Guid.NewGuid().ToString();

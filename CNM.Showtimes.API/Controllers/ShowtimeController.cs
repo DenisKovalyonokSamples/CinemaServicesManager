@@ -12,8 +12,10 @@ using CNM.Domain.Interfaces;
 
 namespace CNM.Showtimes.API.Controllers
 {
+    #nullable enable
     [ApiController]
     [Route("showtime")]
+    [ApiConventionType(typeof(DefaultApiConventions))]
     public class ShowtimeController : ControllerBase
     {
         private readonly MediatR.IMediator _mediator;
@@ -51,17 +53,19 @@ namespace CNM.Showtimes.API.Controllers
 
         [HttpGet]
         [Authorize(Policy = "Read")]
-        public IActionResult Get([FromQuery] DateTime? date, [FromQuery] string title)
+        [ProducesResponseType(typeof(List<DomainEntities.ShowtimeEntity>), 200)]
+        public async Task<IActionResult> Get([FromQuery] DateTime? date, [FromQuery] string? title)
         {
-            var showtimes = _mediator.Send(new CNM.Application.UseCases.Showtimes.GetShowtimesQuery { Date = date, Title = title }).GetAwaiter().GetResult();
+            var showtimes = await _mediator.Send(new CNM.Application.UseCases.Showtimes.GetShowtimesQuery { Date = date, Title = title });
             return Ok(showtimes.ToList());
         }
 
         [HttpPost]
         [Authorize(Policy = "Write")]
+        [ProducesResponseType(typeof(DomainEntities.ShowtimeEntity), 201)]
+        [ProducesResponseType(typeof(ProblemDetails), 400)]
         public async Task<IActionResult> Post([FromBody] DomainEntities.ShowtimeEntity payload, [FromQuery] string imdbApiKey)
         {
-
             if (!ModelState.IsValid)
             {
                 // Use the first error as detail
@@ -81,6 +85,8 @@ namespace CNM.Showtimes.API.Controllers
 
         [HttpPut]
         [Authorize(Policy = "Write")]
+        [ProducesResponseType(typeof(DomainEntities.ShowtimeEntity), 200)]
+        [ProducesResponseType(typeof(ProblemDetails), 404)]
         public async Task<IActionResult> Put([FromBody] DomainEntities.ShowtimeEntity payload, [FromQuery] string imdbApiKey)
         {
             var updatedShowtime = await _mediator.Send(new CNM.Application.UseCases.Showtimes.UpdateShowtimeCommand { Payload = payload, ImdbApiKey = imdbApiKey });
@@ -90,14 +96,17 @@ namespace CNM.Showtimes.API.Controllers
 
         [HttpDelete("{id}")]
         [Authorize(Policy = "Write")]
-        public IActionResult Delete(int id)
+        [ProducesResponseType(204)]
+        [ProducesResponseType(typeof(ProblemDetails), 404)]
+        public async Task<IActionResult> Delete(int id)
         {
-            var deleted = _mediator.Send(new CNM.Application.UseCases.Showtimes.DeleteShowtimeCommand { Id = id }).GetAwaiter().GetResult();
+            var deleted = await _mediator.Send(new CNM.Application.UseCases.Showtimes.DeleteShowtimeCommand { Id = id });
             if (!deleted) return this.ProblemCompat(title: "Not Found", detail: "Showtime not found", statusCode: 404, type: "https://httpstatuses.com/404");
             return NoContent();
         }
 
         [HttpPatch]
+        [ProducesResponseType(typeof(ProblemDetails), 500)]
         public IActionResult Patch()
         {
             throw new Exception("Test error");

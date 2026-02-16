@@ -63,9 +63,6 @@ package "CNM.Movies.Tests" {
   class MoviesTests
 }
 
-package "CNM.Gateway.Tests" {
-  class GatewayTests
-}
 
 package "CNM.Gateway.Tests" {
   class GatewayTests
