@@ -185,16 +185,16 @@ namespace CNM.Showtimes.Tests
             Assert.True(logMessages.Any(message => message.Contains("ShowtimeController request")));
         }
 
-        // Background service increments shared singleton on each ping iteration.
+        // Background service increments status count in memory cache on each ping iteration.
         [Fact]
-        public async Task ImdbStatusBackgroundService_IncrementsSingleton_OnPing()
+        public async Task ImdbStatusBackgroundService_IncrementsCache_OnPing()
         {
             var logMessages = new List<string>();
             var loggerFactory = new LoggerFactory();
             loggerFactory.AddProvider(new ListLoggerProvider(logMessages));
             var imdbClient = new FakeImdbClient { Ping = true };
-            var statusSingleton = new ImdbStatusSingleton();
-            var backgroundService = new ImdbStatusBackgroundService(loggerFactory.CreateLogger<ImdbStatusBackgroundService>(), imdbClient, statusSingleton);
+            var memoryCache = new Microsoft.Extensions.Caching.Memory.MemoryCache(new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions());
+            var backgroundService = new ImdbStatusBackgroundService(loggerFactory.CreateLogger<ImdbStatusBackgroundService>(), imdbClient, memoryCache);
 
             using var cancellationTokenSource = new CancellationTokenSource();
             cancellationTokenSource.CancelAfter(50);
@@ -202,7 +202,9 @@ namespace CNM.Showtimes.Tests
             await Task.Delay(60);
             await backgroundService.StopAsync(cancellationTokenSource.Token);
 
-            Assert.True(statusSingleton.StatusChecks >= 1);
+            memoryCache.TryGetValue("ImdbStatusChecks", out object countObj);
+            var count = countObj is int i ? i : 0;
+            Assert.True(count >= 1);
         }
 
         // Token service parses base64 token into claims; throws for invalid.
@@ -275,7 +277,7 @@ namespace CNM.Showtimes.Tests
 
             Assert.NotNull(serviceProvider.GetService<Interfaces.IShowtimesRepository>());
             Assert.NotNull(serviceProvider.GetService<IImdbClient>());
-            Assert.NotNull(serviceProvider.GetService<ImdbStatusSingleton>());
+            Assert.NotNull(serviceProvider.GetService<Microsoft.Extensions.Caching.Memory.IMemoryCache>());
             Assert.NotNull(serviceProvider.GetService<IActionDescriptorCollectionProvider>());
         }
 

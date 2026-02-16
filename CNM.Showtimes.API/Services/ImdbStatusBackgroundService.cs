@@ -1,4 +1,5 @@
 using CNM.Domain.Interfaces;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
@@ -11,13 +12,13 @@ namespace CNM.Showtimes.API.Services
     {
         private readonly ILogger<ImdbStatusBackgroundService> _logger;
         private readonly IImdbClient _client;
-        private readonly ImdbStatusSingleton _singleton;
+        private readonly IMemoryCache _cache;
 
-        public ImdbStatusBackgroundService(ILogger<ImdbStatusBackgroundService> logger, IImdbClient client, ImdbStatusSingleton singleton)
+        public ImdbStatusBackgroundService(ILogger<ImdbStatusBackgroundService> logger, IImdbClient client, IMemoryCache cache)
         {
             _logger = logger;
             _client = client;
-            _singleton = singleton;
+            _cache = cache;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -27,7 +28,8 @@ namespace CNM.Showtimes.API.Services
                 try
                 {
                     var ok = await _client.PingAsync();
-                    _singleton.Increment();
+                    var count = _cache.Get<int>("ImdbStatusChecks");
+                    _cache.Set("ImdbStatusChecks", count + 1);
                     _logger.LogInformation("IMDB ping status: {Status}", ok);
                 }
                 catch (Exception ex)
