@@ -5,8 +5,8 @@ using CNM.Application.Middleware;
 using CNM.Showtimes.API.Auth;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
+using CNM.Domain.Database;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -18,9 +18,11 @@ namespace CNM.Showtimes.API
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        private readonly IWebHostEnvironment _environment;
+        public Startup(IConfiguration configuration, IWebHostEnvironment environment)
         {
             Configuration = configuration;
+            _environment = environment;
         }
 
         public IConfiguration Configuration { get; }
@@ -29,12 +31,8 @@ namespace CNM.Showtimes.API
         public void ConfigureServices(IServiceCollection services)
         {
             // Consolidated single DbContext registration
-            services.AddDbContext<DomainDb.DatabaseContext>(options =>
-            {
-                options.UseInMemoryDatabase("CinemaDb")
-                    .EnableSensitiveDataLogging()
-                    .ConfigureWarnings(b => b.Ignore(InMemoryEventId.TransactionIgnoredWarning));
-            });
+            var useInMemory = _environment.IsDevelopment() || string.Equals(Configuration["Database:Provider"], "InMemory", System.StringComparison.OrdinalIgnoreCase);
+            services.AddDatabase(Configuration, useInMemory);
             services.AddScoped<IShowtimesRepository, Repositories.ShowtimesRepository>();
             services.AddSingleton<ICustomAuthenticationTokenService, CustomAuthenticationTokenService>();
             services.AddMemoryCache();

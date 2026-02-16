@@ -270,7 +270,8 @@ namespace CNM.Showtimes.Tests
         {
             var serviceCollection = new ServiceCollection();
             var configuration = new ConfigurationBuilder().Build();
-            var startup = new Startup(configuration);
+            var environment = new SimpleWebHostEnvironment { EnvironmentName = Environments.Development };
+            var startup = new Startup(configuration, environment);
 
             startup.ConfigureServices(serviceCollection);
             var serviceProvider = serviceCollection.BuildServiceProvider();
@@ -285,16 +286,17 @@ namespace CNM.Showtimes.Tests
         [Fact]
         public void Startup_Configure_DoesNotThrow()
         {
-            var serviceCollection = new ServiceCollection();
+            var services = new ServiceCollection();
             var configuration = new ConfigurationBuilder().Build();
-            var startup = new Startup(configuration);
-            startup.ConfigureServices(serviceCollection);
+            var env = new SimpleWebHostEnvironment { EnvironmentName = Environments.Development };
+            var startup = new Startup(configuration, env);
+            startup.ConfigureServices(services);
 
-            var serviceProvider = serviceCollection.BuildServiceProvider();
+            var serviceProvider = services.BuildServiceProvider();
             var appBuilder = new ApplicationBuilder(serviceProvider);
-            var environment = new SimpleWebHostEnvironment { EnvironmentName = Environments.Development };
+            var runtimeEnv = new SimpleWebHostEnvironment { EnvironmentName = Environments.Development };
 
-            var exception = Record.Exception(() => startup.Configure(appBuilder, environment));
+            var exception = Record.Exception(() => startup.Configure(appBuilder, runtimeEnv));
             Assert.Null(exception);
         }
 
