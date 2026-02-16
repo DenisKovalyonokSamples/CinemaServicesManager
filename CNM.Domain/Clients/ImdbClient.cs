@@ -15,7 +15,6 @@ namespace CNM.Domain.Clients
         public ImdbClient(HttpClient http)
         {
             _http = http;
-            _http.BaseAddress = new Uri("https://imdb-api.com/");
         }
 
         public async Task<bool> PingAsync()
