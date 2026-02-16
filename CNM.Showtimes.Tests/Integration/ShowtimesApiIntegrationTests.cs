@@ -20,6 +20,7 @@ namespace CNM.Showtimes.Tests.Integration
             _factory = factory.WithWebHostBuilder(builder =>
             {
                 // could override config if needed
+                    configBuilder.AddConfiguration(mem);
             });
         }
 
