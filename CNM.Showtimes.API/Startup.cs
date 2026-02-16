@@ -13,6 +13,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using CNM.Domain.Interfaces;
 using CNM.Domain.Clients;
+using CNM.Showtimes.API.Options;
 
 namespace CNM.Showtimes.API
 {
@@ -38,11 +39,15 @@ namespace CNM.Showtimes.API
             services.AddMemoryCache();
             services.AddDomainServices(Configuration);
             services.AddHostedService<Services.ImdbStatusBackgroundService>();
+            services.AddOptions<AuthOptions>()
+                .Bind(Configuration.GetSection("Auth"))
+                .ValidateDataAnnotations();
             services.AddAuthentication(options =>
             {
-                options.AddScheme<CustomAuthenticationHandler>(CustomAuthenticationSchemeOptions.AuthenticationScheme, CustomAuthenticationSchemeOptions.AuthenticationScheme);
+                var authOptions = Configuration.GetSection("Auth").Get<AuthOptions>() ?? new AuthOptions();
+                options.AddScheme<CustomAuthenticationHandler>(authOptions.SchemeName, authOptions.SchemeName);
                 options.RequireAuthenticatedSignIn = true;
-                options.DefaultScheme = CustomAuthenticationSchemeOptions.AuthenticationScheme;
+                options.DefaultScheme = authOptions.SchemeName;
             });
             services.AddAuthorization(options =>
             {

@@ -12,23 +12,29 @@ namespace CNM.Domain.Clients
     {
         public static IServiceCollection AddDomainServices(this IServiceCollection services, IConfiguration configuration)
         {
+            services.AddOptions();
+            var imdbOptions = configuration.GetSection("Imdb").Get<ImdbOptions>() ?? new ImdbOptions { BaseUrl = "https://imdb-api.com", TimeoutSeconds = 10, RetryCount = 3 };
+            if (string.IsNullOrWhiteSpace(imdbOptions.BaseUrl))
+            {
+                throw new System.InvalidOperationException("Imdb:BaseUrl is required");
+            }
+
             services.AddHttpClient<IImdbClient, ImdbClient>(httpClient =>
             {
-                var imdbBaseUrl = configuration["Imdb:BaseUrl"] ?? "https://imdb-api.com";
-                httpClient.BaseAddress = new System.Uri(imdbBaseUrl.TrimEnd('/') + "/");
-                httpClient.Timeout = TimeSpan.FromSeconds(10); // Set reasonable timeout
+                httpClient.BaseAddress = new System.Uri((imdbOptions.BaseUrl ?? "https://imdb-api.com").TrimEnd('/') + "/");
+                httpClient.Timeout = TimeSpan.FromSeconds(imdbOptions.TimeoutSeconds); // Set reasonable timeout
             })
-            .AddPolicyHandler(GetRetryPolicy()); // Apply retry/backoff policy
+            .AddPolicyHandler(GetRetryPolicy(imdbOptions.RetryCount)); // Apply retry/backoff policy
             return services;
         }
 
         // Creates retry policy for transient/429 errors
-        private static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
+        private static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy(int retryCount)
         {
             return HttpPolicyExtensions
                 .HandleTransientHttpError() // 5xx, 408, network errors
                 .OrResult(result => (int)result.StatusCode == 429) // Too Many Requests
-                .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))); // Exponential backoff
+                .WaitAndRetryAsync(retryCount, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))); // Exponential backoff
         }
     }
 }

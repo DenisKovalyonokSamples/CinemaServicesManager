@@ -7,6 +7,7 @@ using Microsoft.OpenApi.Models;
 using CNM.Application.Middleware;
 using CNM.Application.Auth;
 using CNM.Domain.Clients;
+using CNM.Gateway.API.Options;
 
 namespace CNM.Gateway.API
 {
@@ -23,6 +24,11 @@ namespace CNM.Gateway.API
         {
             services.AddSingleton<ICustomAuthenticationTokenService, CustomAuthenticationTokenService>();
             services.AddDomainServices(Configuration);
+            services.AddOptions<GatewayOptions>()
+                .Bind(Configuration.GetSection("Gateway"))
+                .ValidateDataAnnotations()
+                .Validate(o => !string.IsNullOrWhiteSpace(o.ShowtimesEndpoint), "Gateway:ShowtimesEndpoint is required")
+                .Validate(o => !string.IsNullOrWhiteSpace(o.MoviesEndpoint), "Gateway:MoviesEndpoint is required");
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
