@@ -19,24 +19,43 @@ namespace CNM.Domain.Clients
 
         public async Task<bool> PingAsync()
         {
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            bool success = false;
             try
             {
                 var resp = await _http.GetAsync("API/Top250Movies");
-                return resp.IsSuccessStatusCode;
+                success = resp.IsSuccessStatusCode;
+                return success;
             }
             catch
             {
                 return false;
             }
+            finally
+            {
+                stopwatch.Stop();
+                System.Diagnostics.Trace.WriteLine($"ImdbClient.PingAsync duration={stopwatch.ElapsedMilliseconds}ms success={success}");
+            }
         }
 
         public async Task<ImdbTitleResponse> GetByIdAsync(string imdbId, string apiKey)
         {
-            var resp = await _http.GetAsync($"API/Title/{apiKey}/{imdbId}");
-            resp.EnsureSuccessStatusCode();
-            var json = await resp.Content.ReadAsStringAsync();
-            var model = JsonSerializer.Deserialize<ImdbTitleResponse>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            return model;
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            bool success = false;
+            try
+            {
+                var resp = await _http.GetAsync($"API/Title/{apiKey}/{imdbId}");
+                success = resp.IsSuccessStatusCode;
+                resp.EnsureSuccessStatusCode();
+                var json = await resp.Content.ReadAsStringAsync();
+                var model = JsonSerializer.Deserialize<ImdbTitleResponse>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                return model;
+            }
+            finally
+            {
+                stopwatch.Stop();
+                System.Diagnostics.Trace.WriteLine($"ImdbClient.GetByIdAsync duration={stopwatch.ElapsedMilliseconds}ms success={success}");
+            }
         }
     }
 }

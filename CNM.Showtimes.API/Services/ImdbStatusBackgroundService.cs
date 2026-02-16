@@ -25,16 +25,19 @@ namespace CNM.Showtimes.API.Services
         {
             while (!stoppingToken.IsCancellationRequested)
             {
+                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
                 try
                 {
                     var pingSucceeded = await _imdbClient.PingAsync();
                     var currentCount = _memoryCache.Get<int>("ImdbStatusChecks");
                     _memoryCache.Set("ImdbStatusChecks", currentCount + 1);
-                    _logger.LogInformation("IMDB ping status: {Status}", pingSucceeded);
+                    stopwatch.Stop();
+                    _logger.LogInformation("IMDB ping status: {Status} (duration={Duration}ms)", pingSucceeded, stopwatch.ElapsedMilliseconds);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error pinging IMDB API");
+                    stopwatch.Stop();
+                    _logger.LogError(ex, "Error pinging IMDB API (duration={Duration}ms)", stopwatch.ElapsedMilliseconds);
                 }
 
                 await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
