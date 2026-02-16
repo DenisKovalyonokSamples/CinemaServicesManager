@@ -33,7 +33,10 @@ namespace CNM.Gateway.Tests.UnitTests
         public async Task Proxy_UnknownService_ReturnsNotFound()
         {
             var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string>()).Build();
-            var controller = new GatewayController(new FakeHttpClientFactory(new HttpClient(new FakeHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)))), configuration)
+            var controller = new GatewayController(
+                new FakeHttpClientFactory(new HttpClient(new FakeHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)))),
+                configuration,
+                Microsoft.Extensions.Logging.Abstractions.NullLogger<GatewayController>.Instance)
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
             };
@@ -66,7 +69,10 @@ namespace CNM.Gateway.Tests.UnitTests
                 return downstreamResponse;
             });
             var httpClient = new HttpClient(fakeHandler);
-            var controller = new GatewayController(new FakeHttpClientFactory(httpClient), configuration)
+            var controller = new GatewayController(
+                new FakeHttpClientFactory(httpClient),
+                configuration,
+                Microsoft.Extensions.Logging.Abstractions.NullLogger<GatewayController>.Instance)
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
             };
@@ -115,7 +121,10 @@ namespace CNM.Gateway.Tests.UnitTests
                     Content = new ByteArrayContent(Array.Empty<byte>())
                 };
             });
-            var controller = new GatewayController(new FakeHttpClientFactory(new HttpClient(fakeHandler)), configuration)
+            var controller = new GatewayController(
+                new FakeHttpClientFactory(new HttpClient(fakeHandler)),
+                configuration,
+                Microsoft.Extensions.Logging.Abstractions.NullLogger<GatewayController>.Instance)
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
             };

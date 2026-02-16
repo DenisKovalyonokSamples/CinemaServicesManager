@@ -17,10 +17,11 @@ namespace CNM.Gateway.API.Controllers
         private readonly IConfiguration _configuration;
         private readonly ILogger<GatewayController> _logger;
 
-        public GatewayController(IHttpClientFactory httpClientFactory, IConfiguration configuration)
+        public GatewayController(IHttpClientFactory httpClientFactory, IConfiguration configuration, ILogger<GatewayController> logger)
         {
             _httpClientFactory = httpClientFactory;
             _configuration = configuration;
+            _logger = logger;
         }
 
         [HttpGet, HttpPost, HttpPut, HttpDelete, HttpPatch]
