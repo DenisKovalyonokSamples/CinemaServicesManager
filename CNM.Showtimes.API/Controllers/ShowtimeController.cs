@@ -135,20 +135,20 @@ namespace Microsoft.AspNetCore.Mvc
                     as Microsoft.AspNetCore.Mvc.Infrastructure.ProblemDetailsFactory;
                 if (factory != null)
                 {
-                    problem = factory.CreateProblemDetails(httpContext,
-                        statusCode: statusCode,
-                        title: title,
-                        type: type,
-                        detail: detail);
+                problem = factory.CreateProblemDetails(httpContext,
+                    statusCode: statusCode,
+                    title: title ?? string.Empty,
+                    type: type ?? string.Empty,
+                    detail: detail ?? string.Empty);
                 }
                 else
                 {
                     problem = new ProblemDetails
                     {
-                        Status = statusCode,
-                        Title = title,
-                        Type = type,
-                        Detail = detail
+                        Status = statusCode ?? 500,
+                        Title = title ?? string.Empty,
+                        Type = type ?? string.Empty,
+                        Detail = detail ?? string.Empty
                     };
                 }
             }
@@ -157,9 +157,9 @@ namespace Microsoft.AspNetCore.Mvc
                 problem = new ProblemDetails
                 {
                     Status = statusCode,
-                    Title = title,
-                    Type = type,
-                    Detail = detail
+                    Title = title ?? string.Empty,
+                    Type = type ?? string.Empty,
+                    Detail = detail ?? string.Empty
                 };
             }
 

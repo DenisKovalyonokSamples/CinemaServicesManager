@@ -4,7 +4,6 @@ using Repositories = CNM.Domain.Repositories;
 using CNM.Application.Middleware;
 using CNM.Showtimes.API.Auth;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using CNM.Domain.Database;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;

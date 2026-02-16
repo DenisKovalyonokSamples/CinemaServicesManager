@@ -1,0 +1,10 @@
+CNM.Gateway.Tests/
+CNM.Movies.Tests/
+CNM.Showtimes.Tests/
+CNM.Application.Tests/
+*.Tests/
+*.Test/
+*.Tests.csproj
+*.Test.csproj
+bin/
+obj/
