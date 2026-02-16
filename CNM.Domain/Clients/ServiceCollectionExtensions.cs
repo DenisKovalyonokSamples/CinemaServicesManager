@@ -12,11 +12,11 @@ namespace CNM.Domain.Clients
     {
         public static IServiceCollection AddDomainServices(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddHttpClient<IImdbClient, ImdbClient>(client =>
+            services.AddHttpClient<IImdbClient, ImdbClient>(httpClient =>
             {
-                var baseUrl = configuration["Imdb:BaseUrl"] ?? "https://imdb-api.com";
-                client.BaseAddress = new System.Uri(baseUrl.TrimEnd('/') + "/");
-                client.Timeout = TimeSpan.FromSeconds(10); // Set reasonable timeout
+                var imdbBaseUrl = configuration["Imdb:BaseUrl"] ?? "https://imdb-api.com";
+                httpClient.BaseAddress = new System.Uri(imdbBaseUrl.TrimEnd('/') + "/");
+                httpClient.Timeout = TimeSpan.FromSeconds(10); // Set reasonable timeout
             })
             .AddPolicyHandler(GetRetryPolicy()); // Apply retry/backoff policy
             return services;

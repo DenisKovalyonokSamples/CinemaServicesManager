@@ -37,14 +37,14 @@ namespace CNM.Application.Tests
         [Fact]
         public void Startup_ConfigureServices_RegistersDependenciesAndHealthChecks()
         {
-            var serviceCollection = new ServiceCollection();
+            var services = new ServiceCollection();
             var configuration = new ConfigurationBuilder().Build();
             var startup = new Startup(configuration);
             var environment = new SimpleWebHostEnvironment { EnvironmentName = Environments.Development };
-            serviceCollection.AddSingleton<IWebHostEnvironment>(environment);
+            services.AddSingleton<IWebHostEnvironment>(environment);
 
-            startup.ConfigureServices(serviceCollection);
-            var serviceProvider = serviceCollection.BuildServiceProvider();
+            startup.ConfigureServices(services);
+            var serviceProvider = services.BuildServiceProvider();
 
             Assert.NotNull(serviceProvider.GetService<IShowtimesRepository>());
             Assert.NotNull(serviceProvider.GetService<DatabaseContext>());
@@ -56,17 +56,17 @@ namespace CNM.Application.Tests
         [Fact]
         public void Startup_Configure_SetsPipeline_InitializesSampleData_AndMapsEndpoints()
         {
-            var serviceCollection = new ServiceCollection();
+            var services = new ServiceCollection();
             var configuration = new ConfigurationBuilder().Build();
             var startup = new Startup(configuration);
             var environment = new SimpleWebHostEnvironment { EnvironmentName = Environments.Production };
-            serviceCollection.AddSingleton<IWebHostEnvironment>(environment);
+            services.AddSingleton<IWebHostEnvironment>(environment);
             // Add minimal services used in Configure
-            serviceCollection.AddRouting();
-            serviceCollection.AddControllers();
-            serviceCollection.AddDbContext<DatabaseContext>(opts => opts.UseInMemoryDatabase("test"));
-            serviceCollection.AddTransient<IShowtimesRepository, ShowtimesRepository>();
-            var serviceProvider = serviceCollection.BuildServiceProvider();
+            services.AddRouting();
+            services.AddControllers();
+            services.AddDbContext<DatabaseContext>(opts => opts.UseInMemoryDatabase("test"));
+            services.AddTransient<IShowtimesRepository, ShowtimesRepository>();
+            var serviceProvider = services.BuildServiceProvider();
             var appBuilder = new ApplicationBuilder(serviceProvider);
 
             var exception = Record.Exception(() => startup.Configure(appBuilder, environment));
@@ -79,9 +79,9 @@ namespace CNM.Application.Tests
         [Fact]
         public void ShowtimesRepository_Add_Update_Delete_AndQueries_Work()
         {
-            var options = new DbContextOptionsBuilder<DatabaseContext>().UseInMemoryDatabase("repo").Options;
-            using var dbContext = new DatabaseContext(options);
-            var repository = new ShowtimesRepository(dbContext);
+            var dbOptions = new DbContextOptionsBuilder<DatabaseContext>().UseInMemoryDatabase("repo").Options;
+            using var databaseContext = new DatabaseContext(dbOptions);
+            var repository = new ShowtimesRepository(databaseContext);
 
             // Add
             var newShowtime = new CNM.Domain.Database.Entities.ShowtimeEntity
@@ -94,14 +94,14 @@ namespace CNM.Application.Tests
                 Movie = new CNM.Domain.Database.Entities.MovieEntity { Title = "First", ImdbId = "tt1", Stars = "A", ReleaseDate = new DateTime(2019, 1, 1) }
             };
             var addedShowtime = repository.Add(newShowtime);
-            Assert.Equal(1, dbContext.Showtimes.Count());
+            Assert.Equal(1, databaseContext.Showtimes.Count());
 
             // GetCollection (no filter returns all)
             var allShowtimes = repository.GetCollection();
             Assert.Single(allShowtimes);
 
             // GetCollection with filter (matching)
-            var filteredShowtimes = repository.GetCollection(q => q.Any(x => x.AuditoriumId == 10));
+            var filteredShowtimes = repository.GetCollection(showtime => showtime.AuditoriumId == 10);
             Assert.Single(filteredShowtimes);
 
             // Update existing
@@ -121,7 +121,7 @@ namespace CNM.Application.Tests
             // Delete existing
             var deletedShowtime = repository.Delete(1);
             Assert.NotNull(deletedShowtime);
-            Assert.Empty(dbContext.Showtimes);
+            Assert.Empty(databaseContext.Showtimes);
 
             // Delete non-existing
             var nonExistingDeletedShowtime = repository.Delete(2);

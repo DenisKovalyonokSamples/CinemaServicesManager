@@ -11,14 +11,14 @@ namespace CNM.Showtimes.API.Services
     public class ImdbStatusBackgroundService : BackgroundService
     {
         private readonly ILogger<ImdbStatusBackgroundService> _logger;
-        private readonly IImdbClient _client;
-        private readonly IMemoryCache _cache;
+        private readonly IImdbClient _imdbClient;
+        private readonly IMemoryCache _memoryCache;
 
-        public ImdbStatusBackgroundService(ILogger<ImdbStatusBackgroundService> logger, IImdbClient client, IMemoryCache cache)
+        public ImdbStatusBackgroundService(ILogger<ImdbStatusBackgroundService> logger, IImdbClient imdbClient, IMemoryCache memoryCache)
         {
             _logger = logger;
-            _client = client;
-            _cache = cache;
+            _imdbClient = imdbClient;
+            _memoryCache = memoryCache;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -27,10 +27,10 @@ namespace CNM.Showtimes.API.Services
             {
                 try
                 {
-                    var ok = await _client.PingAsync();
-                    var count = _cache.Get<int>("ImdbStatusChecks");
-                    _cache.Set("ImdbStatusChecks", count + 1);
-                    _logger.LogInformation("IMDB ping status: {Status}", ok);
+                    var pingSucceeded = await _imdbClient.PingAsync();
+                    var currentCount = _memoryCache.Get<int>("ImdbStatusChecks");
+                    _memoryCache.Set("ImdbStatusChecks", currentCount + 1);
+                    _logger.LogInformation("IMDB ping status: {Status}", pingSucceeded);
                 }
                 catch (Exception ex)
                 {

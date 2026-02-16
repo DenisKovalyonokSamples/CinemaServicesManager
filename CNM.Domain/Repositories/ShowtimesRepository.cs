@@ -9,33 +9,33 @@ namespace CNM.Domain.Repositories
 {
     public class ShowtimesRepository : IShowtimesRepository
     {
-        private readonly DatabaseContext _context;
-        public ShowtimesRepository(DatabaseContext context)
+        private readonly DatabaseContext _dbContext;
+        public ShowtimesRepository(DatabaseContext dbContext)
         {
-            _context = context;
+            _dbContext = dbContext;
         }
 
         public ShowtimeEntity Add(ShowtimeEntity showtimeEntity)
         {
-            _context.Showtimes.Add(showtimeEntity);
-            _context.SaveChanges();
+            _dbContext.Showtimes.Add(showtimeEntity);
+            _dbContext.SaveChanges();
             return showtimeEntity;
         }
 
         public ShowtimeEntity Delete(int id)
         {
-            var entity = _context.Showtimes.FirstOrDefault(x => x.Id == id);
+            var entity = _dbContext.Showtimes.FirstOrDefault(showtime => showtime.Id == id);
             if (entity == null) return null;
-            _context.Showtimes.Remove(entity);
-            _context.SaveChanges();
+            _dbContext.Showtimes.Remove(entity);
+            _dbContext.SaveChanges();
             return entity;
         }
 
-        public ShowtimeEntity GetByMovie(Func<IQueryable<MovieEntity>, bool> filter)
+        public ShowtimeEntity GetByMovie(Func<MovieEntity, bool> predicate)
         {
-            var query = _context.Movies.AsQueryable();
-            if (filter != null && !filter(query)) return null;
-            return _context.Showtimes.FirstOrDefault(x => x.Movie != null);
+            var movie = _dbContext.Movies.FirstOrDefault(m => predicate == null || predicate(m));
+            if (movie == null) return null;
+            return _dbContext.Showtimes.FirstOrDefault(showtime => showtime.Movie != null && showtime.Movie.ShowtimeId == movie.ShowtimeId);
         }
 
         public IEnumerable<ShowtimeEntity> GetCollection()
@@ -43,38 +43,36 @@ namespace CNM.Domain.Repositories
             return GetCollection(null);
         }
 
-        public IEnumerable<ShowtimeEntity> GetCollection(Func<IQueryable<ShowtimeEntity>, bool> filter)
+        public IEnumerable<ShowtimeEntity> GetCollection(Func<ShowtimeEntity, bool> predicate)
         {
-            var query = _context.Showtimes.AsQueryable();
-            if (filter == null) return query.ToList();
-            var ok = filter(query);
-            return ok ? query.ToList() : Enumerable.Empty<ShowtimeEntity>();
+            var queryableShowtimes = _dbContext.Showtimes.AsQueryable();
+            return predicate == null ? queryableShowtimes.ToList() : queryableShowtimes.Where(predicate).ToList();
         }
 
         public ShowtimeEntity Update(ShowtimeEntity showtimeEntity)
         {
-            var existing = _context.Showtimes.FirstOrDefault(x => x.Id == showtimeEntity.Id);
-            if (existing == null) return null;
-            existing.StartDate = showtimeEntity.StartDate;
-            existing.EndDate = showtimeEntity.EndDate;
-            existing.Schedule = showtimeEntity.Schedule;
-            existing.AuditoriumId = showtimeEntity.AuditoriumId;
+            var existingShowtime = _dbContext.Showtimes.FirstOrDefault(s => s.Id == showtimeEntity.Id);
+            if (existingShowtime == null) return null;
+            existingShowtime.StartDate = showtimeEntity.StartDate;
+            existingShowtime.EndDate = showtimeEntity.EndDate;
+            existingShowtime.Schedule = showtimeEntity.Schedule;
+            existingShowtime.AuditoriumId = showtimeEntity.AuditoriumId;
             if (showtimeEntity.Movie != null)
             {
-                var movie = _context.Movies.FirstOrDefault(m => m.ShowtimeId == existing.Id);
+                var movie = _dbContext.Movies.FirstOrDefault(m => m.ShowtimeId == existingShowtime.Id);
                 if (movie == null)
                 {
-                    movie = new MovieEntity { ShowtimeId = existing.Id };
-                    _context.Movies.Add(movie);
+                    movie = new MovieEntity { ShowtimeId = existingShowtime.Id };
+                    _dbContext.Movies.Add(movie);
                 }
                 movie.Title = showtimeEntity.Movie.Title;
                 movie.ImdbId = showtimeEntity.Movie.ImdbId;
                 movie.Stars = showtimeEntity.Movie.Stars;
                 movie.ReleaseDate = showtimeEntity.Movie.ReleaseDate;
-                existing.Movie = movie;
+                existingShowtime.Movie = movie;
             }
-            _context.SaveChanges();
-            return existing;
+            _dbContext.SaveChanges();
+            return existingShowtime;
         }
     }
 }

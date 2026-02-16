@@ -15,36 +15,24 @@ namespace CNM.Showtimes.API.Controllers
     [Route("showtime")]
     public class ShowtimeController : ControllerBase
     {
-        private readonly DomainDb.IShowtimesRepository _repo;
-        private readonly IImdbClient _imdb;
-        public ShowtimeController(DomainDb.IShowtimesRepository repo, IImdbClient imdb)
+        private readonly DomainDb.IShowtimesRepository _showtimesRepository;
+        private readonly IImdbClient _imdbClient;
+        public ShowtimeController(DomainDb.IShowtimesRepository showtimesRepository, IImdbClient imdbClient)
         {
-            _repo = repo;
-            _imdb = imdb;
+            _showtimesRepository = showtimesRepository;
+            _imdbClient = imdbClient;
         }
 
         [HttpGet]
         [Authorize(Policy = "Read")]
         public IActionResult Get([FromQuery] DateTime? date, [FromQuery] string title)
         {
-            var list = _repo.GetCollection(q =>
-            {
-                var data = q;
-                if (date.HasValue)
-                {
-                    data = data.Where(x => x.StartDate <= date.Value && x.EndDate >= date.Value);
-                }
-                if (!string.IsNullOrWhiteSpace(title))
-                {
-                    var term = title.Trim();
-                    data = data.Where(x =>
-                        x.Movie != null &&
-                        x.Movie.Title != null &&
-                        x.Movie.Title.Contains(term, StringComparison.OrdinalIgnoreCase));
-                }
-                return data.Any();
-            });
-            return Ok(list.ToList());
+            var titleTerm = title?.Trim();
+            var showtimes = _showtimesRepository.GetCollection(showtime =>
+                (!date.HasValue || (showtime.StartDate <= date.Value && showtime.EndDate >= date.Value)) &&
+                (string.IsNullOrWhiteSpace(titleTerm) || (showtime.Movie != null && showtime.Movie.Title != null && showtime.Movie.Title.Contains(titleTerm, StringComparison.OrdinalIgnoreCase)))
+            );
+            return Ok(showtimes.ToList());
         }
 
         [HttpPost]
@@ -56,13 +44,13 @@ namespace CNM.Showtimes.API.Controllers
             if (string.IsNullOrWhiteSpace(imdbApiKey))
                 return BadRequest("imdb_api_key required");
 
-            var imdb = await _imdb.GetByIdAsync(payload.Movie.ImdbId, imdbApiKey);
-            payload.Movie.Title = imdb?.title ?? payload.Movie.Title;
-            payload.Movie.Stars = imdb?.stars ?? payload.Movie.Stars;
-            if (DateTime.TryParse(imdb?.releaseDate, out var rd)) payload.Movie.ReleaseDate = rd;
+            var imdbTitle = await _imdbClient.GetByIdAsync(payload.Movie.ImdbId, imdbApiKey);
+            payload.Movie.Title = imdbTitle?.title ?? payload.Movie.Title;
+            payload.Movie.Stars = imdbTitle?.stars ?? payload.Movie.Stars;
+            if (DateTime.TryParse(imdbTitle?.releaseDate, out var parsedReleaseDate)) payload.Movie.ReleaseDate = parsedReleaseDate;
 
-            var created = _repo.Add(payload);
-            return Created($"/showtime/{created.Id}", created);
+            var createdShowtime = _showtimesRepository.Add(payload);
+            return Created($"/showtime/{createdShowtime.Id}", createdShowtime);
         }
 
         [HttpPut]
@@ -71,22 +59,22 @@ namespace CNM.Showtimes.API.Controllers
         {
             if (payload?.Movie != null && !string.IsNullOrWhiteSpace(payload.Movie.ImdbId) && !string.IsNullOrWhiteSpace(imdbApiKey))
             {
-                var imdb = await _imdb.GetByIdAsync(payload.Movie.ImdbId, imdbApiKey);
-                payload.Movie.Title = imdb?.title ?? payload.Movie.Title;
-                payload.Movie.Stars = imdb?.stars ?? payload.Movie.Stars;
-                if (DateTime.TryParse(imdb?.releaseDate, out var rd)) payload.Movie.ReleaseDate = rd;
+                var imdbTitle = await _imdbClient.GetByIdAsync(payload.Movie.ImdbId, imdbApiKey);
+                payload.Movie.Title = imdbTitle?.title ?? payload.Movie.Title;
+                payload.Movie.Stars = imdbTitle?.stars ?? payload.Movie.Stars;
+                if (DateTime.TryParse(imdbTitle?.releaseDate, out var parsedReleaseDate)) payload.Movie.ReleaseDate = parsedReleaseDate;
             }
-            var updated = _repo.Update(payload);
-            if (updated == null) return NotFound();
-            return Ok(updated);
+            var updatedShowtime = _showtimesRepository.Update(payload);
+            if (updatedShowtime == null) return NotFound();
+            return Ok(updatedShowtime);
         }
 
         [HttpDelete("{id}")]
         [Authorize(Policy = "Write")]
         public IActionResult Delete(int id)
         {
-            var removed = _repo.Delete(id);
-            if (removed == null) return NotFound();
+            var deletedShowtime = _showtimesRepository.Delete(id);
+            if (deletedShowtime == null) return NotFound();
             return NoContent();
         }
 

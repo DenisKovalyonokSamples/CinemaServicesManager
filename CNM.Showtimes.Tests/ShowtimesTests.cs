@@ -38,31 +38,31 @@ namespace CNM.Showtimes.Tests
         [Fact]
         public void ShowtimeController_Get_FiltersByDateAndTitle()
         {
-            var repository = new FakeRepo();
+            var showtimesRepository = new FakeRepo();
             var imdbClient = new FakeImdbClient();
-            var showtimeController = new ShowtimeController(repository, imdbClient)
+            var showtimeController = new ShowtimeController(showtimesRepository, imdbClient)
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
             };
 
-            var filterDate = new DateTime(2020, 1, 5);
-            var actionResult = showtimeController.Get(filterDate, "Star");
+            var dateFilter = new DateTime(2020, 1, 5);
+            var actionResult = showtimeController.Get(dateFilter, "Star");
             var okObjectResult = Assert.IsType<OkObjectResult>(actionResult);
-            var returnedShowtimes = Assert.IsAssignableFrom<IEnumerable<ShowtimeEntity>>(okObjectResult.Value);
-            Assert.Single(returnedShowtimes);
-            Assert.Equal("Star Movie", returnedShowtimes.First().Movie.Title);
+            var returnedShowtimesList = Assert.IsAssignableFrom<IEnumerable<ShowtimeEntity>>(okObjectResult.Value);
+            Assert.Single(returnedShowtimesList);
+            Assert.Equal("Star Movie", returnedShowtimesList.First().Movie.Title);
         }
 
         // Creates a showtime, fetches IMDB data, and enriches movie fields before returning Created.
         [Fact]
         public async Task ShowtimeController_Post_ValidatesAndCreates_AndFetchesImdb()
         {
-            var repository = new FakeRepo();
+            var showtimesRepository = new FakeRepo();
             var imdbClient = new FakeImdbClient
             {
                 GetById = new ImdbTitleResponse { id = "tt42", title = "Answer", stars = "A,B", releaseDate = "2020-02-02" }
             };
-            var showtimeController = new ShowtimeController(repository, imdbClient)
+            var showtimeController = new ShowtimeController(showtimesRepository, imdbClient)
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
             };
@@ -77,10 +77,10 @@ namespace CNM.Showtimes.Tests
 
             var actionResult = await showtimeController.Post(newShowtime, "APIKEY");
             var createdResult = Assert.IsType<CreatedResult>(actionResult);
-            var createdShowtime = Assert.IsType<ShowtimeEntity>(createdResult.Value);
-            Assert.Equal("Answer", createdShowtime.Movie.Title);
-            Assert.Equal("A,B", createdShowtime.Movie.Stars);
-            Assert.Equal(new DateTime(2020, 2, 2), createdShowtime.Movie.ReleaseDate);
+            var createdShowtimeEntity = Assert.IsType<ShowtimeEntity>(createdResult.Value);
+            Assert.Equal("Answer", createdShowtimeEntity.Movie.Title);
+            Assert.Equal("A,B", createdShowtimeEntity.Movie.Stars);
+            Assert.Equal(new DateTime(2020, 2, 2), createdShowtimeEntity.Movie.ReleaseDate);
         }
 
         // Returns BadRequest when POST payload has missing/empty imdb id.
@@ -102,19 +102,19 @@ namespace CNM.Showtimes.Tests
         [Fact]
         public async Task ShowtimeController_Put_UpdatesAndFetchesImdb_WhenImdbIdPresent()
         {
-            var repository = new FakeRepo { UpdateResult = new CNM.Domain.Database.Entities.ShowtimeEntity { Id = 2, Movie = new CNM.Domain.Database.Entities.MovieEntity() } };
+            var showtimesRepository = new FakeRepo { UpdateResult = new CNM.Domain.Database.Entities.ShowtimeEntity { Id = 2, Movie = new CNM.Domain.Database.Entities.MovieEntity() } };
             var imdbClient = new FakeImdbClient { GetById = new ImdbTitleResponse { title = "NewTitle", stars = "C,D", releaseDate = "2021-01-01" } };
-            var showtimeController = new ShowtimeController(repository, imdbClient)
+            var showtimeController = new ShowtimeController(showtimesRepository, imdbClient)
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
             };
-            var updatedShowtimePayload = new CNM.Domain.Database.Entities.ShowtimeEntity { Id = 2, Movie = new CNM.Domain.Database.Entities.MovieEntity { ImdbId = "tt99" } };
-            var actionResult = await showtimeController.Put(updatedShowtimePayload, "APIKEY");
+            var updatedShowtime = new CNM.Domain.Database.Entities.ShowtimeEntity { Id = 2, Movie = new CNM.Domain.Database.Entities.MovieEntity { ImdbId = "tt99" } };
+            var actionResult = await showtimeController.Put(updatedShowtime, "APIKEY");
             var okObjectResult = Assert.IsType<OkObjectResult>(actionResult);
-            var updatedShowtime = Assert.IsType<ShowtimeEntity>(okObjectResult.Value);
-            Assert.Equal("NewTitle", updatedShowtime.Movie.Title);
-            Assert.Equal("C,D", updatedShowtime.Movie.Stars);
-            Assert.Equal(new DateTime(2021, 1, 1), updatedShowtime.Movie.ReleaseDate);
+            var updatedShowtimeEntity = Assert.IsType<ShowtimeEntity>(okObjectResult.Value);
+            Assert.Equal("NewTitle", updatedShowtimeEntity.Movie.Title);
+            Assert.Equal("C,D", updatedShowtimeEntity.Movie.Stars);
+            Assert.Equal(new DateTime(2021, 1, 1), updatedShowtimeEntity.Movie.ReleaseDate);
         }
 
         // Returns NotFound when repository update yields null.
@@ -134,8 +134,8 @@ namespace CNM.Showtimes.Tests
         [Fact]
         public void ShowtimeController_Delete_NoContentOrNotFound()
         {
-            var repository = new FakeRepo { DeleteResult = new CNM.Domain.Database.Entities.ShowtimeEntity { Id = 5 } };
-            var showtimeController = new ShowtimeController(repository, new FakeImdbClient())
+            var showtimesRepository = new FakeRepo { DeleteResult = new CNM.Domain.Database.Entities.ShowtimeEntity { Id = 5 } };
+            var showtimeController = new ShowtimeController(showtimesRepository, new FakeImdbClient())
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
             };
@@ -174,11 +174,11 @@ namespace CNM.Showtimes.Tests
         public void RequestTimingMiddleware_LogsForShowtimeRoutes()
         {
             var loggerFactory = new LoggerFactory();
-            var logger = loggerFactory.CreateLogger<RequestTimingMiddleware>();
+            var requestTimingLogger = loggerFactory.CreateLogger<RequestTimingMiddleware>();
             var logMessages = new List<string>();
             loggerFactory.AddProvider(new ListLoggerProvider(logMessages));
-            var loggerWithProvider = loggerFactory.CreateLogger<RequestTimingMiddleware>();
-            var requestTimingMiddleware = new RequestTimingMiddleware(async httpContext => await Task.Delay(10), loggerWithProvider);
+            var requestTimingLoggerWithProvider = loggerFactory.CreateLogger<RequestTimingMiddleware>();
+            var requestTimingMiddleware = new RequestTimingMiddleware(async httpContext => await Task.Delay(10), requestTimingLoggerWithProvider);
             var httpContext = new DefaultHttpContext();
             httpContext.Request.Path = "/showtime/list";
             requestTimingMiddleware.Invoke(httpContext).GetAwaiter().GetResult();
@@ -304,12 +304,9 @@ namespace CNM.Showtimes.Tests
             public DomainDb.Entities.ShowtimeEntity DeleteResult { get; set; }
             public DomainDb.Entities.ShowtimeEntity UpdateResult { get; set; }
             public IEnumerable<DomainDb.Entities.ShowtimeEntity> GetCollection() => _data;
-            public IEnumerable<DomainDb.Entities.ShowtimeEntity> GetCollection(Func<IQueryable<DomainDb.Entities.ShowtimeEntity>, bool> filter)
-            {
-                var q = _data.AsQueryable();
-                return filter(q) ? _data : Enumerable.Empty<DomainDb.Entities.ShowtimeEntity>();
-            }
-            public DomainDb.Entities.ShowtimeEntity GetByMovie(Func<IQueryable<DomainDb.Entities.MovieEntity>, bool> filter) => null;
+            public IEnumerable<DomainDb.Entities.ShowtimeEntity> GetCollection(Func<DomainDb.Entities.ShowtimeEntity, bool> predicate)
+                => predicate == null ? _data : _data.Where(predicate);
+            public DomainDb.Entities.ShowtimeEntity GetByMovie(Func<DomainDb.Entities.MovieEntity, bool> predicate) => null;
             public DomainDb.Entities.ShowtimeEntity Add(DomainDb.Entities.ShowtimeEntity showtimeEntity)
             {
                 _data.Add(showtimeEntity);
