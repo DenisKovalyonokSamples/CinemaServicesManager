@@ -263,7 +263,3 @@ The solution implements the requirements described in `Details.txt` in the root 
 ## Contact
 
 For questions or contributions, please open an issue or contact the repository owner.
-
----
-
-This description provides a clear, professional, and detailed overview for HR, architects, and senior developers reviewing your GitHub repository.
